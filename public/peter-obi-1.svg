@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#20201d"/>
+<stop offset="1" stop-color="#2c2b27"/>
+</linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#g)"/>
+<circle cx="400" cy="330" r="160" fill="#8a8a8a" opacity="0.55"/>
+<rect x="210" y="500" width="380" height="420" rx="180" fill="#6b6b6b" opacity="0.55"/>
+<rect x="24" y="24" width="752" height="952" fill="none" stroke="#b89a5d" stroke-width="1.5" opacity="0.6"/>
+<text x="52" y="70" fill="#b89a5d" font-family="Georgia, serif" font-size="22" letter-spacing="2">01 / 08</text>
+<text x="400" y="955" fill="#f4f1ea" font-family="Arial" font-size="20" text-anchor="middle" letter-spacing="2" opacity="0.85">PETER OBI — PUBLIC APPEARANCE 01</text>
+<text x="400" y="982" fill="#b89a5d" font-family="Arial" font-size="13" text-anchor="middle" letter-spacing="3" opacity="0.9">PLACEHOLDER — REPLACE WITH LICENSED PHOTOGRAPH</text>
+</svg>

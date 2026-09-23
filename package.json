@@ -1,0 +1,27 @@
+{
+  "name": "executive-evidence-gallery",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "latest",
+    "@radix-ui/react-icons": "latest",
+    "@tailwindcss/postcss": "latest",
+    "framer-motion": "latest",
+    "lucide-react": "latest",
+    "next": "16.3.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "tailwindcss": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}
