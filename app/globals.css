@@ -1,13 +1,20 @@
 @import "tailwindcss";
-:root{--ink:#111;--paper:#f4f1ea;--muted:#77736b;--line:#d9d3c8;--accent:#b89a5d;color-scheme:light}
-/* This is a light-themed site by design. Without the line above, browsers that
-   detect a dark OS/browser preference will silently re-theme native form
-   controls (button, input, select) to dark styling — which can make text on
-   any button that doesn't set BOTH an explicit background and text color
-   (e.g. a border-only outline button) nearly invisible, even though every
-   Tailwind color class is still correctly applied underneath. */
+:root{--ink:#f2ede1;--paper:#121110;--surface:#1b1914;--surface-2:#221f18;--muted:#a49c88;--line:#312c22;--accent:#c7a869;color-scheme:dark}
+/* This is now a dark-themed site by design. color-scheme:dark tells the
+   browser to render native form controls (button, input, select, scrollbars)
+   in dark style to match, rather than mismatching them against the page. */
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
-button{color:inherit;background:transparent}a{text-decoration:none;color:inherit}button,input,textarea,select{font:inherit}::selection{background:#111;color:#fff}.editorial-serif{font-family:Georgia,'Times New Roman',serif}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.25em;color:#77736b}.card-lift{transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s ease}.card-lift:hover,.card-lift:focus-within{transform:translateY(-12px);box-shadow:0 28px 60px rgba(20,16,6,.22)}
+button{color:inherit;background:transparent}a{text-decoration:none;color:inherit}button,input,textarea,select{font:inherit}::selection{background:var(--accent);color:#151310}.editorial-serif{font-family:Georgia,'Times New Roman',serif}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.25em;color:var(--muted)}.card-lift{transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s ease}.card-lift:hover,.card-lift:focus-within{transform:translateY(-12px);box-shadow:0 28px 60px rgba(0,0,0,.5),0 0 0 1px rgba(199,168,105,.12)}
+/* Shared dark "surface" utilities used in place of bg-white/border-black
+   throughout the app — Tailwind's own bg-white/border-black/10 etc. classes
+   are hardcoded light-theme colors that don't respond to the CSS variables
+   above, so components use these classes instead wherever they used to
+   assume a light page. */
+.surface{background:var(--surface);border-color:var(--line)}
+.surface-2{background:var(--surface-2);border-color:var(--line)}
+.text-muted{color:var(--muted)}
+input,textarea,select{background:var(--surface);color:var(--ink);border-color:var(--line)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
 
 /* ---------- Media carousel (person galleries) ---------- */
 .media-carousel{width:100%}
@@ -42,7 +49,12 @@ button{color:inherit;background:transparent}a{text-decoration:none;color:inherit
 .ev-panel-source{display:flex;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(244,241,234,.18);font-size:11px;color:rgba(244,241,234,.7)}
 .ev-panel-cta{display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-size:12px;font-weight:700;color:var(--accent)}
 .ev-mobile-rail{gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-.ev-mobile-card{scroll-snap-align:center;min-width:84%;border:1px solid rgba(0,0,0,.1);background:#fff;flex:0 0 auto}
+.ev-mobile-card{scroll-snap-align:center;min-width:84%;border:1px solid var(--line);background:var(--surface);flex:0 0 auto}
 .ev-mobile-rail::-webkit-scrollbar{display:none}
 
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card-lift{transition:none}.animate-bounce{animation:none!important}.mc-slide{transition:opacity .01s linear;transform:none!important}.ev-panel,.ev-panel-img,.ev-panel-summary,.ev-panel-vertical{transition:none!important}}
+/* ---------- Giving page: numbers pop + change colour on hover ---------- */
+.number-pop{display:inline-block;transition:color .25s ease;cursor:default}
+.number-pop:hover{color:var(--accent);animation:number-bounce .55s cubic-bezier(.34,1.56,.64,1)}
+@keyframes number-bounce{0%{transform:translateY(0)}30%{transform:translateY(-8px)}55%{transform:translateY(1px)}75%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card-lift{transition:none}.animate-bounce{animation:none!important}.mc-slide{transition:opacity .01s linear;transform:none!important}.ev-panel,.ev-panel-img,.ev-panel-summary,.ev-panel-vertical{transition:none!important}.number-pop:hover{animation:none!important}}

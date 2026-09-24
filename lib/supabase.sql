@@ -53,7 +53,16 @@ alter table people enable row level security;
 alter table political_parties enable row level security;
 
 -- Public visitors can read published evidence/people/party records.
-create policy "public can read evidence" on evidence for select using (verification_status in ('source_verified','partially_verified','disputed','archived'));
+-- Every row in `evidence` got there via a moderator's explicit Approve action
+-- in /admin (unapproved items live only in `submissions`, which the public
+-- can never read), so membership in this table IS the publish gate.
+-- verification_status is a trust-level badge shown on the record, not a
+-- second visibility gate — filtering reads by it here caused approved items
+-- to silently stay invisible whenever the moderator left the badge on its
+-- default value. If you ever add a true "draft" evidence state, reintroduce
+-- a status filter here scoped to that state specifically.
+drop policy if exists "public can read evidence" on evidence;
+create policy "public can read evidence" on evidence for select using (true);
 create policy "public can read people" on people for select using (true);
 create policy "public can read parties" on political_parties for select using (true);
 
@@ -101,3 +110,60 @@ create policy "public can read evidence-uploads" on storage.objects
 alter table submissions add column if not exists media_url text;
 alter table submissions add column if not exists thumbnail_url text;
 alter table submissions add column if not exists media_title text;
+
+-- ---------------------------------------------------------------------------
+-- Flags / corrections: public "something's wrong with this record" reports,
+-- reviewed by moderators. Separate from submissions (new evidence) — this is
+-- for disputing or correcting evidence that's already published.
+-- ---------------------------------------------------------------------------
+create type flag_status as enum ('open','resolved','dismissed');
+create table if not exists flags (
+ id uuid primary key default gen_random_uuid(), evidence_id uuid references evidence(id) on delete cascade,
+ reason text not null, details text, reporter_email text,
+ status flag_status not null default 'open', resolved_by uuid, resolved_at timestamptz, resolution_notes text,
+ created_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- DB-backed rate limiting. A fixed-window counter keyed by e.g. "submit:1.2.3.4".
+-- DB-backed (not in-memory) because serverless functions don't share memory
+-- across instances, so an in-memory counter would silently do nothing in
+-- production on Vercel/similar.
+-- ---------------------------------------------------------------------------
+create table if not exists rate_limits (
+ key text primary key, window_start timestamptz not null default now(), count int not null default 0
+);
+
+-- ---------------------------------------------------------------------------
+-- Wayback Machine snapshot, captured automatically when evidence is approved,
+-- so a cited fact doesn't die when the original source page does.
+-- ---------------------------------------------------------------------------
+alter table evidence add column if not exists wayback_url text;
+
+-- ---------------------------------------------------------------------------
+-- Full-text search: a generated tsvector over title/description/source/location,
+-- with a GIN index, plus a ranked search function callable via supabase-js .rpc().
+-- ---------------------------------------------------------------------------
+alter table evidence add column if not exists search_vector tsvector
+  generated always as (
+    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(source_name, '')), 'C') ||
+    setweight(to_tsvector('english', coalesce(location_city, '') || ' ' || coalesce(location_state, '') || ' ' || coalesce(location_country, '')), 'C')
+  ) stored;
+create index if not exists evidence_search_idx on evidence using gin(search_vector);
+
+create or replace function search_evidence(query text)
+returns setof evidence
+language sql stable
+as $$
+  select * from evidence
+  where search_vector @@ websearch_to_tsquery('english', query)
+  order by ts_rank(search_vector, websearch_to_tsquery('english', query)) desc
+  limit 50;
+$$;
+
+-- Public can create flags (a moderator reviews before anything changes); admin
+-- routes use the service-role key so they bypass RLS regardless.
+alter table flags enable row level security;
+create policy "public can create flags" on flags for insert with check (true);

@@ -96,10 +96,10 @@ export default function Submit() {
       <main className="mx-auto max-w-3xl px-5 py-28 text-center">
         <CheckCircle2 className="mx-auto" size={48} />
         <h1 className="editorial-serif mt-6 text-6xl">Submission received.</h1>
-        <p className="mt-5 text-lg leading-8 text-neutral-600">
+        <p className="mt-5 text-lg leading-8 text-[var(--muted)]">
           Your material is marked for review. It will not appear in the public archive until a reviewer checks its provenance and metadata.
         </p>
-        <button onClick={() => setDone(false)} className="mt-8 rounded-full bg-black px-6 py-3 text-sm font-bold text-white">
+        <button onClick={() => setDone(false)} className="mt-8 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-[#15130f]">
           Submit another
         </button>
       </main>
@@ -110,68 +110,68 @@ export default function Submit() {
     <main className="mx-auto max-w-4xl px-5 py-20">
       <p className="eyebrow">Contribute</p>
       <h1 className="editorial-serif mt-3 text-6xl md:text-8xl">Submit evidence.</h1>
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600">
+      <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">
         Share a relevant image, video, audio recording or document — as a file, or a link to where it already lives online.
         Submission does not mean publication: every item enters review first.
       </p>
 
       {error && (
-        <div className="mt-8 flex items-start gap-3 border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">
+        <div className="mt-8 flex items-start gap-3 border border-red-900/50 bg-red-950/40 px-5 py-4 text-sm text-red-300">
           <AlertTriangle size={18} className="mt-0.5 shrink-0" />
           <p>{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-12 grid gap-6 border-t border-black/10 pt-8">
+      <form onSubmit={handleSubmit} className="mt-12 grid gap-6 border-t border-white/10 pt-8">
         <label className="grid gap-2 text-sm font-semibold">
           Evidence title
-          <input name="title" required className="border border-black/15 bg-white px-4 py-3" placeholder="Give the record a clear title" />
+          <input name="title" required className="border border-white/15 bg-[var(--surface)] px-4 py-3" placeholder="Give the record a clear title" />
         </label>
         <label className="grid gap-2 text-sm font-semibold">
           What does this evidence show?
-          <textarea name="description" required rows={5} className="border border-black/15 bg-white px-4 py-3" placeholder="Describe the material without making unsupported claims." />
+          <textarea name="description" required rows={5} className="border border-white/15 bg-[var(--surface)] px-4 py-3" placeholder="Describe the material without making unsupported claims." />
         </label>
         <div className="grid gap-6 md:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold">
             Where did this happen?
-            <input name="location" required className="border border-black/15 bg-white px-4 py-3" placeholder="City, state, country" />
+            <input name="location" required className="border border-white/15 bg-[var(--surface)] px-4 py-3" placeholder="City, state, country" />
           </label>
           <label className="grid gap-2 text-sm font-semibold">
             When did this happen?
-            <input name="eventDate" type="date" className="border border-black/15 bg-white px-4 py-3" />
+            <input name="eventDate" type="date" className="border border-white/15 bg-[var(--surface)] px-4 py-3" />
           </label>
         </div>
         <label className="grid gap-2 text-sm font-semibold">
-          Original source URL <span className="font-normal text-neutral-500">(where this was first published, if different from the evidence link below)</span>
-          <input name="sourceUrl" type="url" className="border border-black/15 bg-white px-4 py-3" placeholder="https://..." />
+          Original source URL <span className="font-normal text-[var(--muted)]">(where this was first published, if different from the evidence link below)</span>
+          <input name="sourceUrl" type="url" className="border border-white/15 bg-[var(--surface)] px-4 py-3" placeholder="https://..." />
         </label>
         <label className="grid gap-2 text-sm font-semibold">
-          Your name <span className="font-normal text-neutral-500">(optional)</span>
-          <input name="uploaderName" className="border border-black/15 bg-white px-4 py-3" />
+          Your name <span className="font-normal text-[var(--muted)]">(optional)</span>
+          <input name="uploaderName" className="border border-white/15 bg-[var(--surface)] px-4 py-3" />
         </label>
 
         <div>
           <span className="text-sm font-semibold">The evidence itself</span>
-          <div className="mt-2 inline-flex overflow-hidden rounded-full border border-black/15">
-            <button type="button" onClick={() => setMode('file')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'file' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+          <div className="mt-2 inline-flex overflow-hidden rounded-full border border-white/15">
+            <button type="button" onClick={() => setMode('file')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'file' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
               <UploadCloud size={13} className="mr-1.5 inline" /> Upload a file
             </button>
-            <button type="button" onClick={() => setMode('link')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'link' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+            <button type="button" onClick={() => setMode('link')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'link' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
               <Link2 size={13} className="mr-1.5 inline" /> Paste a link
             </button>
           </div>
 
           {mode === 'file' ? (
-            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed border-black/20 bg-white px-5 py-12 text-center">
+            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed border-white/20 bg-[var(--surface)] px-5 py-12 text-center">
               <UploadCloud size={28} />
               <span className="font-bold">Upload image, video, audio or document</span>
-              <span className="text-xs text-neutral-500">Images, video, audio, PDF or Word files, up to 50MB.</span>
+              <span className="text-xs text-[var(--muted)]">Images, video, audio, PDF or Word files, up to 50MB.</span>
               <input name="file" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" className="sr-only" />
             </label>
           ) : (
-            <div className="mt-4 border border-black/15 bg-white p-5">
-              <label className="flex items-center gap-3 border border-black/15 bg-white px-4 py-3">
-                <LinkIcon size={16} className="shrink-0 text-neutral-400" />
+            <div className="mt-4 border border-white/15 bg-[var(--surface)] p-5">
+              <label className="flex items-center gap-3 border border-white/15 bg-[var(--surface)] px-4 py-3">
+                <LinkIcon size={16} className="shrink-0 text-[var(--muted)]" />
                 <input
                   value={mediaUrl}
                   onChange={e => {
@@ -183,23 +183,23 @@ export default function Submit() {
                   className="w-full bg-transparent text-sm outline-none"
                 />
               </label>
-              <p className="mt-2 text-xs text-neutral-500">
+              <p className="mt-2 text-xs text-[var(--muted)]">
                 Works with YouTube, Vimeo, direct image/video files, or a webpage — we'll try to pull a thumbnail automatically.
               </p>
 
               {previewLoading && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
+                <div className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
                   <Loader2 size={16} className="animate-spin" /> Fetching preview…
                 </div>
               )}
               {previewError && !previewLoading && (
-                <div className="mt-4 flex items-start gap-2 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div className="mt-4 flex items-start gap-2 border border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-300">
                   <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                   <span>{previewError} You can still submit — a reviewer will check the link manually.</span>
                 </div>
               )}
               {preview && !previewLoading && (
-                <div className="mt-4 flex gap-4 border border-black/10 bg-neutral-50 p-4">
+                <div className="mt-4 flex gap-4 border border-white/10 bg-[var(--surface)] p-4">
                   <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-black">
                     {preview.thumbnailUrl ? (
                       <img src={preview.thumbnailUrl} alt="Preview" className="h-full w-full object-cover" />
@@ -210,9 +210,9 @@ export default function Submit() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">{preview.mediaType.replace('-', ' ')}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">{preview.mediaType.replace('-', ' ')}</p>
                     <p className="mt-1 truncate text-sm font-semibold">{preview.title || mediaUrl}</p>
-                    {!preview.thumbnailUrl && <p className="mt-1 text-xs text-neutral-500">No thumbnail could be detected — it will still be saved as a link.</p>}
+                    {!preview.thumbnailUrl && <p className="mt-1 text-xs text-[var(--muted)]">No thumbnail could be detected — it will still be saved as a link.</p>}
                   </div>
                 </div>
               )}
@@ -224,7 +224,7 @@ export default function Submit() {
           <input name="consent" required type="checkbox" className="mt-1" />
           I confirm I have the right to submit this material and understand it may be reviewed before publication.
         </label>
-        <button disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-6 py-4 text-sm font-bold text-white disabled:opacity-60">
+        <button disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-4 text-sm font-bold text-[#15130f] disabled:opacity-60">
           {submitting && <Loader2 size={16} className="animate-spin" />}
           {submitting ? 'Submitting…' : 'Submit for review'}
         </button>

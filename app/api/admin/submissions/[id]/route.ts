@@ -1,6 +1,8 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
+import {logAudit} from '@/lib/auditLog';
+import {archiveUrl} from '@/lib/wayback';
 
 const UI_TO_DB_VERIFICATION: Record<string, string> = {
   'User Submitted': 'submitted',
@@ -80,6 +82,19 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
       .eq('id', id);
     if (updateError) return NextResponse.json({error: updateError.message}, {status: 500});
 
+    await logAudit('submission_approved', 'submission', id, {evidenceId: evidenceRow.id, verification: verificationDb});
+
+    // Best-effort, non-blocking: archive the source so it survives if the
+    // original page later goes offline. Never let this delay or fail approval.
+    const urlToArchive = submission.source_url || (submission.media_path ? null : submission.media_url);
+    if (urlToArchive) {
+      archiveUrl(urlToArchive)
+        .then(waybackUrl => {
+          if (waybackUrl) admin.from('evidence').update({wayback_url: waybackUrl}).eq('id', evidenceRow.id);
+        })
+        .catch(() => {});
+    }
+
     return NextResponse.json({ok: true, evidenceId: evidenceRow.id});
   }
 
@@ -92,5 +107,6 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
     .eq('id', id);
   if (error) return NextResponse.json({error: error.message}, {status: 500});
 
+  await logAudit(`submission_${dbStatus}`, 'submission', id, {notes: body.notes ?? null});
   return NextResponse.json({ok: true});
 }

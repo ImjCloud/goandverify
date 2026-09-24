@@ -32,16 +32,18 @@ function rowToEvidence(row: any): Evidence {
     verification: DB_TO_UI_VERIFICATION[row.verification_status] ?? 'Under Review',
     image: row.thumbnail_url ?? row.media_url ?? '/evidence-1.svg',
     tags: Array.isArray(row.tags) ? row.tags.map((t: any) => t?.tag?.name).filter(Boolean) : [],
+    waybackUrl: row.wayback_url ?? null,
   };
 }
 
 export async function getPublishedEvidence(): Promise<Evidence[]> {
   if (!supabasePublicConfigured) return demoEvidence;
   try {
+    // Every row in `evidence` got there via an admin Approve action — the
+    // table itself is the publish gate, verification_status is just a badge.
     const {data, error} = await supabasePublic()
       .from('evidence')
       .select('*, tags:evidence_tags(tag:tags(name))')
-      .in('verification_status', ['source_verified', 'partially_verified', 'disputed', 'archived'])
       .order('created_at', {ascending: false});
     if (error || !data) return demoEvidence;
     return data.length ? data.map(rowToEvidence) : demoEvidence;

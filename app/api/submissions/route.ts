@@ -1,6 +1,9 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {randomUUID} from 'crypto';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
+import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
+import {verifyTurnstile} from '@/lib/turnstile';
+import {logAudit} from '@/lib/auditLog';
 
 export const runtime = 'nodejs';
 
@@ -19,8 +22,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(`submit:${ip}`, 5, 3600); // 5 submissions/hour/IP
+  if (!rl.allowed) {
+    return NextResponse.json({error: 'Too many submissions from this network. Please try again in an hour.'}, {status: 429});
+  }
+
   try {
     const form = await req.formData();
+    const turnstileToken = form.get('cf-turnstile-response') ? String(form.get('cf-turnstile-response')) : null;
+    const captchaOk = await verifyTurnstile(turnstileToken, ip);
+    if (!captchaOk) {
+      return NextResponse.json({error: 'Captcha verification failed. Please try again.'}, {status: 400});
+    }
+
     const title = String(form.get('title') ?? '').trim();
     const description = String(form.get('description') ?? '').trim();
     const location = String(form.get('location') ?? '').trim();
@@ -98,6 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({error: error.message}, {status: 500});
     }
 
+    await logAudit('submission_created', 'submission', data.id, {title, ip});
     return NextResponse.json({ok: true, id: data.id});
   } catch (e: any) {
     return NextResponse.json({error: e?.message ?? 'Unexpected error while submitting evidence.'}, {status: 500});

@@ -54,15 +54,15 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
               <img src={item.image} alt={item.title} className="h-full w-full object-cover"/>
-              <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">{item.type}</div>
+              <div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{item.type}</div>
             </div>
             <div className="p-5">
-              <div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-neutral-500">
+              <div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]">
                 <span>{item.year} · {item.location}</span>
                 <span className="inline-flex items-center gap-1">{icon(item.verification)} {item.verification}</span>
               </div>
               <h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-neutral-600">{item.description}</p>
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
               <span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View evidence <ArrowUpRight size={14}/></span>
             </div>
           </Link>
