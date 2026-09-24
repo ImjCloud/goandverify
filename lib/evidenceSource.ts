@@ -31,6 +31,10 @@ function rowToEvidence(row: any): Evidence {
     description: row.description,
     verification: DB_TO_UI_VERIFICATION[row.verification_status] ?? 'Under Review',
     image: row.thumbnail_url ?? row.media_url ?? '/evidence-1.svg',
+    // Kept distinct from `image`: image is always the display thumbnail
+    // (often a .jpg even for a video), mediaUrl is the actual underlying
+    // link (YouTube/Vimeo/file URL) used to detect and build an embed.
+    mediaUrl: row.media_url ?? null,
     tags: Array.isArray(row.tags) ? row.tags.map((t: any) => t?.tag?.name).filter(Boolean) : [],
     waybackUrl: row.wayback_url ?? null,
   };

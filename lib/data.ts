@@ -1,5 +1,5 @@
 export type Evidence = {
-  id:string; slug:string; title:string; type:'image'|'video'|'audio'|'document'; year:number; date:string; location:string; author:string; source:string; sourceUrl:string; description:string; verification:'Source Verified'|'User Submitted'|'Disputed'|'Under Review'|'Partially Verified'|'Archived'; image:string; tags:string[]; waybackUrl?:string|null;
+  id:string; slug:string; title:string; type:'image'|'video'|'audio'|'document'; year:number; date:string; location:string; author:string; source:string; sourceUrl:string; description:string; verification:'Source Verified'|'User Submitted'|'Disputed'|'Under Review'|'Partially Verified'|'Archived'; image:string; mediaUrl?:string|null; tags:string[]; waybackUrl?:string|null;
 };
 export type GalleryItem = {src:string; alt:string; caption:string};
 export type Person = {slug:string;name:string;role:string;party:string;bio:string;image:string;gallery:GalleryItem[];timeline:{year:string;title:string;text:string}[]};
