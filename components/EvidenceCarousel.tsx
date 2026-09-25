@@ -22,6 +22,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
               key={item.id}
               href={`/evidence/${item.slug}`}
               className={`ev-panel ${isActive?'is-active':''}`}
+              aria-label={`View evidence: ${item.title}`}
               style={{flexGrow:grow}}
               onMouseEnter={()=>setActive(i)}
               onFocus={()=>setActive(i)}

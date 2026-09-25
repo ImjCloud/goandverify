@@ -1,9 +1,18 @@
 -- Production database blueprint for Supabase/Postgres.
 create extension if not exists pgcrypto;
 
-create type evidence_type as enum ('image','video','audio','document','statement','interview','event','news');
-create type verification_status as enum ('submitted','under_review','source_verified','partially_verified','disputed','archived');
-create type submission_status as enum ('pending_review','under_review','approved','rejected','needs_more_information');
+do $$ begin
+  create type evidence_type as enum ('image','video','audio','document','statement','interview','event','news');
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create type verification_status as enum ('submitted','under_review','source_verified','partially_verified','disputed','archived');
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create type submission_status as enum ('pending_review','under_review','approved','rejected','needs_more_information');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists political_parties (
  id uuid primary key default gen_random_uuid(), name text not null, short_name text not null,
@@ -65,13 +74,21 @@ alter table political_parties enable row level security;
 -- a status filter here scoped to that state specifically.
 drop policy if exists "public can read evidence" on evidence;
 create policy "public can read evidence" on evidence for select using (true);
+drop policy if exists "public can read people" on people;
 create policy "public can read people" on people for select using (true);
+drop policy if exists "public can read parties" on political_parties;
 create policy "public can read parties" on political_parties for select using (true);
 
 -- Public submissions should be inserted only through a controlled server-side endpoint or tightly scoped policy.
 
-create type giving_category as enum ('Health','Education','Relief','Community','Other');
-create type giving_verification_status as enum ('source_identified','source_verified','partially_verified','disputed','under_review');
+do $$ begin
+  create type giving_category as enum ('Health','Education','Relief','Community','Other');
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  create type giving_verification_status as enum ('source_identified','source_verified','partially_verified','disputed','under_review');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists giving_records (
  id uuid primary key default gen_random_uuid(), slug text unique not null, person_id uuid references people(id) on delete set null,
@@ -84,6 +101,7 @@ create index if not exists giving_records_date_idx on giving_records(contributio
 create index if not exists giving_records_category_idx on giving_records(category);
 create index if not exists giving_records_person_idx on giving_records(person_id);
 alter table giving_records enable row level security;
+drop policy if exists "public can read giving records" on giving_records;
 create policy "public can read giving records" on giving_records for select using (verification_status in ('source_identified','source_verified','partially_verified','disputed'));
 
 -- ---------------------------------------------------------------------------
@@ -100,6 +118,7 @@ on conflict (id) do nothing;
 -- policies below only matter if you ever let the browser talk to Storage
 -- directly with the anon key. Public read lets approved evidence images/video
 -- render on the site without a signed URL.
+drop policy if exists "public can read evidence-uploads" on storage.objects;
 create policy "public can read evidence-uploads" on storage.objects
   for select using (bucket_id = 'evidence-uploads');
 
@@ -118,7 +137,10 @@ alter table submissions add column if not exists media_title text;
 -- reviewed by moderators. Separate from submissions (new evidence) — this is
 -- for disputing or correcting evidence that's already published.
 -- ---------------------------------------------------------------------------
-create type flag_status as enum ('open','resolved','dismissed');
+do $$ begin
+  create type flag_status as enum ('open','resolved','dismissed');
+exception when duplicate_object then null;
+end $$;
 create table if not exists flags (
  id uuid primary key default gen_random_uuid(), evidence_id uuid references evidence(id) on delete cascade,
  reason text not null, details text, reporter_email text,
@@ -176,3 +198,41 @@ $$;
 -- rate limiting — a public insert policy here would let that be bypassed
 -- by posting directly to Supabase's REST API with the public anon key.
 alter table flags enable row level security;
+
+-- Follow requests for election-cycle updates. Keep this table private; the
+-- application notification worker reads it with the service-role key.
+create table if not exists follow_subscriptions (
+ id uuid primary key default gen_random_uuid(), email text not null,
+ target_type text not null check (target_type in ('person','issue','location')),
+ target_value text not null, election_cycle text not null default '2027',
+ status text not null default 'active' check (status in ('active','unsubscribed')),
+ created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create unique index if not exists follow_subscriptions_unique_idx
+  on follow_subscriptions (lower(email), target_type, lower(target_value), election_cycle);
+create index if not exists follow_subscriptions_target_idx
+  on follow_subscriptions (target_type, target_value, election_cycle);
+alter table follow_subscriptions enable row level security;
+
+-- Advertising requests remain private until a moderator approves them.
+create table if not exists ad_requests (
+ id uuid primary key default gen_random_uuid(),
+ advertiser_name text not null, contact_email text not null,
+ title text not null, description text not null, media_type text not null default 'image' check (media_type in ('image','video','link')), media_url text, media_path text, image_url text,
+ target_url text not null, placement text not null default 'footer',
+ start_date date, end_date date,
+ status text not null default 'pending' check (status in ('pending','approved','rejected','expired')),
+ paused_at timestamptz,
+ reviewer_notes text, reviewed_at timestamptz,
+ created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+alter table ad_requests add column if not exists media_type text not null default 'image';
+alter table ad_requests add column if not exists media_url text;
+alter table ad_requests add column if not exists media_path text;
+alter table ad_requests add column if not exists paused_at timestamptz;
+create index if not exists ad_requests_status_dates_idx on ad_requests(status, start_date, end_date);
+alter table ad_requests enable row level security;
+drop policy if exists "public can read approved adverts" on ad_requests;
+create policy "public can read approved adverts" on ad_requests for select using (
+ status = 'approved' and (start_date is null or start_date <= current_date) and (end_date is null or end_date >= current_date)
+);

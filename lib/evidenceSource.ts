@@ -41,7 +41,7 @@ function rowToEvidence(row: any): Evidence {
 }
 
 export async function getPublishedEvidence(): Promise<Evidence[]> {
-  if (!supabasePublicConfigured) return demoEvidence;
+  if (!supabasePublicConfigured) return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
   try {
     // Every row in `evidence` got there via an admin Approve action — the
     // table itself is the publish gate, verification_status is just a badge.
@@ -49,10 +49,10 @@ export async function getPublishedEvidence(): Promise<Evidence[]> {
       .from('evidence')
       .select('*, tags:evidence_tags(tag:tags(name))')
       .order('created_at', {ascending: false});
-    if (error || !data) return demoEvidence;
-    return data.length ? data.map(rowToEvidence) : demoEvidence;
+    if (error || !data) return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
+    return data.length ? data.map(rowToEvidence) : [];
   } catch {
-    return demoEvidence;
+    return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
   }
 }
 
@@ -76,16 +76,16 @@ export async function searchEvidence(query: string): Promise<Evidence[]> {
 }
 
 export async function getEvidenceBySlug(slug: string): Promise<Evidence | undefined> {
-  if (!supabasePublicConfigured) return demoEvidence.find(e => e.slug === slug);
+  if (!supabasePublicConfigured) return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
   try {
     const {data, error} = await supabasePublic()
       .from('evidence')
       .select('*, tags:evidence_tags(tag:tags(name))')
       .eq('slug', slug)
       .maybeSingle();
-    if (error || !data) return demoEvidence.find(e => e.slug === slug);
+    if (error || !data) return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
     return rowToEvidence(data);
   } catch {
-    return demoEvidence.find(e => e.slug === slug);
+    return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
   }
 }

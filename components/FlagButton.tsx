@@ -39,17 +39,17 @@ export function FlagButton({evidenceId}: {evidenceId: string}) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 text-xs font-bold text-[var(--muted)] hover:text-[var(--accent)]">
+      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 text-xs font-bold text-[var(--muted)] hover:text-[var(--accent)]" aria-expanded={open}>
         <Flag size={13} /> Report an issue with this record
       </button>
     );
   }
 
   return (
-    <div className="border border-white/10 bg-[var(--surface)] p-5">
+    <div className="border border-white/10 bg-[var(--surface)] p-5" role="region" aria-label="Report an issue with this record">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Report an issue</span>
-        <button onClick={() => setOpen(false)} aria-label="Close"><X size={16} /></button>
+        <button onClick={() => setOpen(false)} aria-label="Close report form"><X size={16} /></button>
       </div>
 
       {done ? (
@@ -58,18 +58,23 @@ export function FlagButton({evidenceId}: {evidenceId: string}) {
         </p>
       ) : (
         <form onSubmit={submit} className="mt-4 grid gap-3">
-          <select required value={reason} onChange={e => setReason(e.target.value)} className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm">
+          <label htmlFor="report-reason" className="sr-only">Reason for report</label>
+          <select id="report-reason" required value={reason} onChange={e => setReason(e.target.value)} className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm">
             <option value="">Select a reason…</option>
             {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
+          <label htmlFor="report-details" className="sr-only">Additional report details</label>
           <textarea
+            id="report-details"
             value={details}
             onChange={e => setDetails(e.target.value)}
             rows={3}
             placeholder="Add detail (optional, but helps a moderator review faster)"
             className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm"
           />
+          <label htmlFor="report-email" className="sr-only">Email address for an optional reply</label>
           <input
+            id="report-email"
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}

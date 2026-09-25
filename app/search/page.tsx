@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {Search, Loader2} from 'lucide-react';
 import type {Evidence} from '@/lib/data';
 import {people} from '@/lib/data';
+import {FollowForm} from '@/components/FollowForm';
 
 export default function SearchPage() {
   const [q, setQ] = useState('');
@@ -41,13 +42,15 @@ export default function SearchPage() {
     <main className="mx-auto max-w-7xl px-5 py-20">
       <p className="eyebrow">Search</p>
       <h1 className="editorial-serif mt-3 text-6xl md:text-8xl">Find a record.</h1>
+      <div className="mt-8 max-w-2xl"><FollowForm /></div>
       <div className="mt-10 flex items-center gap-3 border border-white/15 bg-[var(--surface)] px-4">
-        <Search size={20} />
-        <input autoFocus value={q} onChange={e => setQ(e.target.value)} className="w-full py-4 outline-none" placeholder="People, evidence, locations, sources..." />
+        <Search size={20} aria-hidden="true" />
+        <label htmlFor="site-search" className="sr-only">Search people and evidence</label>
+        <input id="site-search" autoFocus value={q} onChange={e => setQ(e.target.value)} className="w-full py-4 outline-none" placeholder="People, evidence, locations, sources..." />
         {loading && <Loader2 size={18} className="animate-spin text-[var(--muted)]" />}
       </div>
       {q && (
-        <div className="mt-12 grid gap-12 md:grid-cols-2">
+        <div className="mt-12 grid gap-12 md:grid-cols-2" aria-live="polite">
           <section>
             <p className="eyebrow">People</p>
             {pp.map(p => (
@@ -70,6 +73,7 @@ export default function SearchPage() {
           </section>
         </div>
       )}
+      {!q && <p className="mt-8 text-sm text-[var(--muted)]">Search by person, location, source, or record title.</p>}
     </main>
   );
 }

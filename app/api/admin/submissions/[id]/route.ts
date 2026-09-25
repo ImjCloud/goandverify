@@ -48,11 +48,12 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
       : null;
     const mediaUrl = storageUrl ?? submission.media_url ?? null;
     const thumbnailUrl = submission.thumbnail_url ?? storageUrl ?? mediaUrl;
+    const evidenceSlug = slugify(submission.title);
 
     const {data: evidenceRow, error: evidenceError} = await admin
       .from('evidence')
       .insert({
-        slug: slugify(submission.title),
+        slug: evidenceSlug,
         title: submission.title,
         type: inferType(submission.media_path ?? submission.media_url),
         description: submission.description,
@@ -83,6 +84,8 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
     if (updateError) return NextResponse.json({error: updateError.message}, {status: 500});
 
     await logAudit('submission_approved', 'submission', id, {evidenceId: evidenceRow.id, verification: verificationDb});
+    await admin.from('activity_events').insert({event_type: 'evidence_published', title: submission.title, description: submission.description, href: `/evidence/${evidenceSlug}`});
+    await admin.from('notification_events').insert({event_type: 'evidence_published', target_type: 'location', target_value: submission.location, title: `New evidence: ${submission.title}`, body: submission.description, href: `/evidence/${evidenceSlug}`});
 
     // Best-effort, non-blocking: archive the source so it survives if the
     // original page later goes offline. Never let this delay or fail approval.
