@@ -45,8 +45,10 @@ create table if not exists audit_logs (
  id uuid primary key default gen_random_uuid(), actor_id uuid, action text not null, entity_type text not null,
  entity_id uuid, details jsonb, created_at timestamptz not null default now()
 );
+-- RLS with zero policies = deny all to anon/authenticated. Written only via
+-- the service-role key (lib/auditLog.ts), which bypasses RLS regardless.
+alter table audit_logs enable row level security;
 
--- Enable RLS in production and create policies based on authenticated roles.
 alter table evidence enable row level security;
 alter table submissions enable row level security;
 alter table people enable row level security;
@@ -133,6 +135,10 @@ create table if not exists flags (
 create table if not exists rate_limits (
  key text primary key, window_start timestamptz not null default now(), count int not null default 0
 );
+-- RLS with zero policies = deny all to anon/authenticated. Read/written only
+-- via the service-role key (lib/rateLimit.ts) — without this, the public
+-- anon key could delete its own row to bypass rate limiting entirely.
+alter table rate_limits enable row level security;
 
 -- ---------------------------------------------------------------------------
 -- Wayback Machine snapshot, captured automatically when evidence is approved,
@@ -165,5 +171,8 @@ $$;
 
 -- Public can create flags (a moderator reviews before anything changes); admin
 -- routes use the service-role key so they bypass RLS regardless.
+-- RLS with zero policies = deny all to anon/authenticated. Written only via
+-- /api/flags, which uses the service-role key (bypasses RLS) and applies
+-- rate limiting — a public insert policy here would let that be bypassed
+-- by posting directly to Supabase's REST API with the public anon key.
 alter table flags enable row level security;
-create policy "public can create flags" on flags for insert with check (true);
