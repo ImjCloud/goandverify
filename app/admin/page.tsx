@@ -43,7 +43,8 @@ type FlagRow = {
 type AdRequest = {
   id: string;
   advertiser_name: string;
-  contact_email: string;
+  contact_email: string | null;
+  contact_whatsapp: string | null;
   title: string;
   description: string;
   media_type: 'image' | 'video' | 'link';
@@ -407,7 +408,7 @@ export default function Admin() {
                       <div><div className="font-bold">{ad.title}</div><p className="mt-1 max-w-md text-xs text-[var(--muted)]">{ad.description}</p><a href={ad.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">Open destination</a></div>
                     </div>
                   </td>
-                  <td className="px-5 py-5">{ad.advertiser_name}<div className="mt-1 text-xs text-[var(--muted)]">{ad.contact_email}</div></td>
+                  <td className="px-5 py-5">{ad.advertiser_name}<div className="mt-1 text-xs text-[var(--muted)]">{[ad.contact_whatsapp && `WhatsApp: ${ad.contact_whatsapp}`, ad.contact_email].filter(Boolean).join(' · ')}</div></td>
                   <td className="px-5 py-5 text-xs">{ad.start_date || 'Now'} - {ad.end_date || 'Ongoing'}<div className="mt-2 text-[var(--muted)]">{ad.analytics?.impressions ?? 0} views · {ad.analytics?.clicks ?? 0} clicks</div></td>
                   <td className="px-5 py-5"><span className="rounded-full border border-white/10 px-3 py-1 text-xs">{ad.status}</span></td>
                   <td className="px-5 py-5"><div className="flex gap-2"><button disabled={adBusyId === ad.id || ad.status === 'approved'} onClick={() => actOnAd(ad.id, 'approved')} className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f] disabled:opacity-40">{adBusyId === ad.id ? '...' : 'Approve'}</button><button disabled={adBusyId === ad.id || ad.status === 'rejected'} onClick={() => actOnAd(ad.id, 'rejected')} className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40">Reject</button>{ad.status === 'approved' && <button disabled={adBusyId === ad.id} onClick={() => toggleAd(ad.id, !!ad.paused_at)} className="rounded-full border border-white/15 px-3 py-2 text-xs font-bold">{ad.paused_at ? 'Resume' : 'Pause'}</button>}</div></td>

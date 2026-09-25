@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   const value = (key: string) => String(form.get(key) ?? '').trim();
   const advertiserName = value('advertiserName');
   const contactEmail = value('contactEmail').toLowerCase();
+  const contactWhatsapp = value('contactWhatsapp');
   const title = value('title');
   const description = value('description');
   const mediaType = value('mediaType') === 'video' || value('mediaType') === 'link' ? value('mediaType') as 'video' | 'link' : 'image';
@@ -25,8 +26,21 @@ export async function POST(req: NextRequest) {
   const rightsConfirmed = form.get('rightsConfirmed') === 'true';
   const file = form.get('mediaFile') instanceof File ? form.get('mediaFile') as File : null;
 
-  if (!advertiserName || !title || !description || !targetUrl || (!mediaUrl && !file) || !rightsConfirmed || !/^\S+@\S+\.\S+$/.test(contactEmail)) {
-    return NextResponse.json({error: 'Complete the required advert and contact fields.'}, {status: 400});
+  const emailValid = !contactEmail || /^\S+@\S+\.\S+$/.test(contactEmail);
+  const whatsappDigits = contactWhatsapp.replace(/[\s\-().]/g, '');
+  const whatsappValid = !contactWhatsapp || /^\+?[0-9]{7,15}$/.test(whatsappDigits);
+
+  if (!advertiserName || !title || !description || !targetUrl || (!mediaUrl && !file) || !rightsConfirmed) {
+    return NextResponse.json({error: 'Complete the required advert fields.'}, {status: 400});
+  }
+  if (!contactEmail && !contactWhatsapp) {
+    return NextResponse.json({error: 'Provide a contact email or a WhatsApp number so we can reach you about your advert.'}, {status: 400});
+  }
+  if (!emailValid) {
+    return NextResponse.json({error: 'Enter a valid contact email, or leave it blank if you gave a WhatsApp number.'}, {status: 400});
+  }
+  if (!whatsappValid) {
+    return NextResponse.json({error: 'Enter a valid WhatsApp number, including country code.'}, {status: 400});
   }
   if (startDate && endDate && startDate > endDate) return NextResponse.json({error: 'The end date must be after the start date.'}, {status: 400});
   for (const link of [targetUrl, mediaUrl, imageUrl].filter(Boolean)) {
@@ -49,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   const {error} = await supabaseAdmin().from('ad_requests').insert({
-    advertiser_name: advertiserName, contact_email: contactEmail, title, description,
+    advertiser_name: advertiserName, contact_email: contactEmail || null, contact_whatsapp: contactWhatsapp || null, title, description,
     rights_confirmed: rightsConfirmed, media_type: mediaType, media_url: storedMediaUrl, media_path: mediaPath, image_url: imageUrl || (mediaType === 'image' ? storedMediaUrl : null), target_url: targetUrl, start_date: startDate, end_date: endDate,
     status: 'pending',
   });

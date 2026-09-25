@@ -1,7 +1,8 @@
 create table if not exists ad_requests (
   id uuid primary key default gen_random_uuid(),
   advertiser_name text not null,
-  contact_email text not null,
+  contact_email text,
+  contact_whatsapp text,
   title text not null,
   description text not null,
   media_type text not null default 'image' check (media_type in ('image', 'video', 'link')),

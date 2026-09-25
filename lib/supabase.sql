@@ -236,7 +236,7 @@ alter table follow_subscriptions enable row level security;
 -- Advertising requests remain private until a moderator approves them.
 create table if not exists ad_requests (
  id uuid primary key default gen_random_uuid(),
- advertiser_name text not null, contact_email text not null,
+ advertiser_name text not null, contact_email text, contact_whatsapp text,
  title text not null, description text not null, media_type text not null default 'image' check (media_type in ('image','video','link')), media_url text, media_path text, image_url text,
  target_url text not null, placement text not null default 'footer',
  start_date date, end_date date,
@@ -249,6 +249,11 @@ alter table ad_requests add column if not exists media_type text not null defaul
 alter table ad_requests add column if not exists media_url text;
 alter table ad_requests add column if not exists media_path text;
 alter table ad_requests add column if not exists paused_at timestamptz;
+alter table ad_requests add column if not exists contact_whatsapp text;
+alter table ad_requests alter column contact_email drop not null;
+alter table ad_requests drop constraint if exists ad_requests_contact_required;
+alter table ad_requests add constraint ad_requests_contact_required
+  check (coalesce(contact_email, '') <> '' or coalesce(contact_whatsapp, '') <> '');
 create index if not exists ad_requests_status_dates_idx on ad_requests(status, start_date, end_date);
 alter table ad_requests enable row level security;
 drop policy if exists "public can read approved adverts" on ad_requests;
