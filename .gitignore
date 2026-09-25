@@ -12,3 +12,4 @@ pnpm-debug.log*
 # Local deployment and editor files
 .vercel/
 .vscode/
+.vercel
