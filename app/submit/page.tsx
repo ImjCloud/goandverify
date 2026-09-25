@@ -1,6 +1,7 @@
 'use client';
 import {useState, useRef, useCallback} from 'react';
 import {UploadCloud, CheckCircle2, AlertTriangle, Loader2, Link2, LinkIcon, Play} from 'lucide-react';
+import {TurnstileWidget} from '@/components/TurnstileWidget';
 
 type Preview = {
   thumbnailUrl: string | null;
@@ -18,6 +19,7 @@ export default function Submit() {
   const [preview, setPreview] = useState<Preview>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchPreview = useCallback((url: string) => {
@@ -75,6 +77,12 @@ export default function Submit() {
       if (preview?.title) submission.set('mediaTitle', preview.title);
     }
 
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Please complete the verification challenge above before submitting.');
+      return;
+    }
+    if (captchaToken) submission.set('cf-turnstile-response', captchaToken);
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/submissions', {method: 'POST', body: submission});
@@ -84,6 +92,7 @@ export default function Submit() {
       form.reset();
       setMediaUrl('');
       setPreview(null);
+      setCaptchaToken(null);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -224,6 +233,7 @@ export default function Submit() {
           <input name="consent" required type="checkbox" className="mt-1" />
           I confirm I have the right to submit this material and understand it may be reviewed before publication.
         </label>
+        <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
         <button disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-4 text-sm font-bold text-[#15130f] disabled:opacity-60">
           {submitting && <Loader2 size={16} className="animate-spin" />}
           {submitting ? 'Submitting…' : 'Submit for review'}
