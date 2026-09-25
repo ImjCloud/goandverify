@@ -56,6 +56,25 @@ export async function getPublishedEvidence(): Promise<Evidence[]> {
   }
 }
 
+export async function searchEvidence(query: string): Promise<Evidence[]> {
+  const q = query.trim();
+  if (!q) return [];
+  if (!supabasePublicConfigured) {
+    const needle = q.toLowerCase();
+    return demoEvidence.filter(e => `${e.title} ${e.description} ${e.source} ${e.location}`.toLowerCase().includes(needle));
+  }
+  try {
+    // Ranked full-text search via the search_evidence() Postgres function
+    // (lib/supabase.sql) — weighted title > description > source/location,
+    // using websearch_to_tsquery so visitors can type naturally.
+    const {data, error} = await supabasePublic().rpc('search_evidence', {query: q});
+    if (error || !data) return [];
+    return data.map(rowToEvidence);
+  } catch {
+    return [];
+  }
+}
+
 export async function getEvidenceBySlug(slug: string): Promise<Evidence | undefined> {
   if (!supabasePublicConfigured) return demoEvidence.find(e => e.slug === slug);
   try {
