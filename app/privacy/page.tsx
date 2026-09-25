@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <h2 className="editorial-serif mt-12 text-4xl">Security and retention</h2>
       <p>Submission data is restricted to moderators. We retain records for as long as they are needed for editorial review, corrections and the public archive. Uploaded material may be retained as part of the archive's provenance record.</p>
       <h2 className="editorial-serif mt-12 text-4xl">Third-party services</h2>
-      <p>The site may use Supabase for storage and database services, Cloudflare Turnstile for abuse prevention, and external media or archive providers when a record links to them. Those services may process requests according to their own policies.</p>
+      <p>The site may use Supabase for storage and database services, and external media or archive providers when a record links to them. Those services may process requests according to their own policies.</p>
       <p className="mt-8 text-sm text-[var(--muted)]">This page describes the current product behavior. Obtain jurisdiction-specific legal advice before treating it as a complete privacy notice.</p>
     </div>
   </main>;

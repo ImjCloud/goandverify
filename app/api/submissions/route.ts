@@ -2,7 +2,6 @@ import {NextRequest, NextResponse} from 'next/server';
 import {randomUUID} from 'crypto';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
 import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
-import {verifyTurnstile} from '@/lib/turnstile';
 import {logAudit} from '@/lib/auditLog';
 
 export const runtime = 'nodejs';
@@ -32,11 +31,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const form = await req.formData();
-    const turnstileToken = form.get('cf-turnstile-response') ? String(form.get('cf-turnstile-response')) : null;
-    const captchaOk = await verifyTurnstile(turnstileToken, ip);
-    if (!captchaOk) {
-      return NextResponse.json({error: 'Captcha verification failed. Please try again.'}, {status: 400});
-    }
 
     const title = String(form.get('title') ?? '').trim();
     const description = String(form.get('description') ?? '').trim();
