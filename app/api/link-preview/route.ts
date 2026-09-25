@@ -5,6 +5,8 @@ import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get('content-length') || 0);
+  if (contentLength > 16_384) return NextResponse.json({error: 'Request is too large.'}, {status: 413});
   const ip = getClientIp(req);
   const rl = await checkRateLimit(`link-preview:${ip}`, 20, 600); // 20 previews/10min/IP
   if (!rl.allowed) {

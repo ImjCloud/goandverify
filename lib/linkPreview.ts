@@ -97,7 +97,7 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreview> {
   // Generic webpage — read Open Graph tags for a preview image + title.
   try {
     const res = await fetch(rawUrl, {
-      redirect: 'follow',
+      redirect: 'manual',
       signal: AbortSignal.timeout(6000),
       headers: {'User-Agent': 'Mozilla/5.0 (compatible; EvidenceGalleryLinkPreview/1.0)'},
     });

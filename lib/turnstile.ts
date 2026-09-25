@@ -5,7 +5,7 @@
  */
 export async function verifyTurnstile(token: string | null, remoteIp: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // not configured yet — don't block submissions
+  if (!secret) return process.env.NODE_ENV !== 'production';
   if (!token) return false;
 
   try {

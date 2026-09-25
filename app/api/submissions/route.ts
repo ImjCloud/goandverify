@@ -15,6 +15,8 @@ const ALLOWED_EXACT = [
 const MAX_BYTES = 50 * 1024 * 1024; // 50MB
 
 export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get('content-length') || 0);
+  if (contentLength > MAX_BYTES + 1_048_576) return NextResponse.json({error: 'Submission is too large.'}, {status: 413});
   if (!supabaseConfigured) {
     return NextResponse.json(
       {error: 'Evidence submission is not configured yet. Set the Supabase environment variables (see .env.example).'},

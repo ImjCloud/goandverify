@@ -1,5 +1,5 @@
 import {NextRequest, NextResponse} from 'next/server';
-import {adminToken, ADMIN_COOKIE} from '@/lib/admin-auth';
+import {adminToken, ADMIN_COOKIE, type AdminRole} from '@/lib/admin-auth';
 import {logAudit} from '@/lib/auditLog';
 import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
 
@@ -11,20 +11,22 @@ export async function POST(req: NextRequest) {
   }
 
   const {password} = await req.json().catch(() => ({password: ''}));
-  const expectedPassword = process.env.ADMIN_PASSWORD;
-  const token = adminToken();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+  const role: AdminRole | null = typeof password === 'string' && superadminPassword && password === superadminPassword ? 'superadmin' : typeof password === 'string' && adminPassword && password === adminPassword ? 'admin' : null;
+  const token = role ? adminToken(role) : null;
 
-  if (!expectedPassword || !token) {
+  if ((!adminPassword && !superadminPassword) || !process.env.ADMIN_SESSION_SECRET) {
     return NextResponse.json(
-      {error: 'Admin login is not configured. Set ADMIN_PASSWORD and ADMIN_SESSION_SECRET in your environment.'},
+      {error: 'Admin login is not configured. Set ADMIN_PASSWORD, optional SUPERADMIN_PASSWORD, and ADMIN_SESSION_SECRET.'},
       {status: 503}
     );
   }
-  if (typeof password !== 'string' || password !== expectedPassword) {
+  if (!role || !token) {
     await logAudit('admin_login_failed', 'admin', null, {ip});
     return NextResponse.json({error: 'Incorrect password.'}, {status: 401});
   }
-  await logAudit('admin_login_succeeded', 'admin', null, {ip});
+  await logAudit('admin_login_succeeded', role, null, {ip});
 
   const res = NextResponse.json({ok: true});
   res.cookies.set(ADMIN_COOKIE, token, {

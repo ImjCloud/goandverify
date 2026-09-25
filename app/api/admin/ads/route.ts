@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
+  if (!isAdminRequest(req, 'superadmin')) return NextResponse.json({error: 'Superadmin approval is required.'}, {status: 403});
   if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
   const body = await req.json().catch(() => ({}));
   const id = typeof body.id === 'string' ? body.id : '';

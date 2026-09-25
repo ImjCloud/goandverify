@@ -4,6 +4,8 @@ import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
 import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get('content-length') || 0);
+  if (contentLength > 31 * 1024 * 1024) return NextResponse.json({error: 'Advert upload is too large.'}, {status: 413});
   if (!supabaseConfigured) return NextResponse.json({error: 'Advertising requests are not configured yet.'}, {status: 503});
   const rate = await checkRateLimit(`ad-request:${getClientIp(req)}`, 3, 3600);
   if (!rate.allowed) return NextResponse.json({error: 'Too many advert requests from this network. Please try again later.'}, {status: 429});
