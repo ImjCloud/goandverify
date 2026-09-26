@@ -66,6 +66,42 @@ export async function isPrivateHost(hostname: string): Promise<boolean> {
   }
 }
 
+// A plain fetch() with redirect:'manual' — which we need so every hop can be
+// re-checked against isPrivateHost before being followed, closing off a
+// redirect-based SSRF bypass — silently stops at the first 3xx response
+// instead of reaching real content. That's extremely common in practice
+// (link shorteners, http→https canonicalization, a platform's own
+// permalink redirects) and was quietly killing the thumbnail/title scrape
+// for any such link with no error surfaced anywhere. Follow redirects
+// ourselves instead, validating each new target the same way the first one
+// was validated.
+export async function safeFetch(startUrl: string, init: RequestInit, maxRedirects = 5): Promise<Response> {
+  let current = startUrl;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    const u = new URL(current);
+    if (!['http:', 'https:'].includes(u.protocol)) throw new Error('Unsupported protocol in redirect.');
+    if (await isPrivateHost(u.hostname)) throw new Error('Redirect points to a private/internal address.');
+
+    const res = await fetch(current, {...init, redirect: 'manual'});
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location');
+      if (!location) return res;
+      current = new URL(location, current).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error('Too many redirects.');
+}
+
+/** X/Twitter status URLs sometimes carry a trailing /photo/N or /video/N when
+ *  copied from the media viewer rather than the tweet itself. The canonical
+ *  .../status/<id> form is what reliably serves og:image, so scrape that. */
+function canonicalizeForScrape(rawUrl: string): string {
+  const m = rawUrl.match(/^(https?:\/\/(?:www\.|m\.)?(?:twitter|x)\.com\/[^/]+\/status\/\d+)(?:\/(?:photo|video)\/\d+)?/i);
+  return m ? m[1] : rawUrl;
+}
+
 export async function getLinkPreview(rawUrl: string): Promise<LinkPreview> {
   let url: URL;
   try {
@@ -116,8 +152,7 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreview> {
 
   // Generic webpage — read Open Graph tags for a preview image + title.
   try {
-    const res = await fetch(rawUrl, {
-      redirect: 'manual',
+    const res = await safeFetch(canonicalizeForScrape(rawUrl), {
       signal: AbortSignal.timeout(6000),
       headers: {'User-Agent': 'Mozilla/5.0 (compatible; EvidenceGalleryLinkPreview/1.0)'},
     });

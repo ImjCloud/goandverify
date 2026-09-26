@@ -4,7 +4,7 @@ import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
 import {logAudit} from '@/lib/auditLog';
 import {archiveUrl} from '@/lib/wayback';
-import {isPrivateHost} from '@/lib/linkPreview';
+import {isPrivateHost, safeFetch} from '@/lib/linkPreview';
 
 const UI_TO_DB_VERIFICATION: Record<string, string> = {
   'User Submitted': 'submitted',
@@ -28,6 +28,9 @@ function inferType(pathOrUrl: string | null): 'image' | 'video' | 'audio' | 'doc
   if (['mp3', 'wav', 'm4a', 'ogg'].includes(ext)) return 'audio';
   if (/youtube\.com|youtu\.be|vimeo\.com|tiktok\.com/i.test(pathOrUrl ?? '')) return 'video';
   if (/(?:^|\/\/)(?:www\.|m\.)?(?:twitter|x)\.com\/[^/]+\/status\/\d+/i.test(pathOrUrl ?? '')) return 'video';
+  if (/instagram\.com\/(p|reel|reels|tv)\//i.test(pathOrUrl ?? '')) return 'video';
+  if (/threads\.net\/@[^/]+\/post\//i.test(pathOrUrl ?? '')) return 'video';
+  if (/(?:^|\/\/)(?:www\.|m\.|web\.)?facebook\.com\/|(?:^|\/\/)fb\.watch\//i.test(pathOrUrl ?? '')) return 'video';
   return 'document';
 }
 
@@ -44,7 +47,11 @@ async function rehostThumbnail(url: string, admin: ReturnType<typeof supabaseAdm
     if (!['http:', 'https:'].includes(parsed.protocol)) return null;
     if (await isPrivateHost(parsed.hostname)) return null;
 
-    const res = await fetch(url, {
+    // Follows redirects itself, re-checking isPrivateHost on every hop — a
+    // plain fetch() auto-follows redirects with no such check, which would
+    // otherwise let a redirect chain walk this server-side request to an
+    // internal address after the first (valid) hop passed the guard.
+    const res = await safeFetch(url, {
       signal: AbortSignal.timeout(8000),
       headers: {'User-Agent': 'Mozilla/5.0 (compatible; EvidenceGalleryThumbnail/1.0)'},
     });
@@ -86,12 +93,21 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
       ? admin.storage.from(bucket).getPublicUrl(submission.media_path).data.publicUrl
       : null;
     const mediaUrl = storageUrl ?? submission.media_url ?? null;
-    let thumbnailUrl = submission.thumbnail_url ?? storageUrl ?? mediaUrl;
-    // Only re-host a thumbnail that actually points at a third party — if it's
-    // already our own uploaded-file storage URL, there's nothing to protect it from.
+    // Falling all the way back to `mediaUrl` here used to be the bug: for a
+    // link submission with no scraped thumbnail, mediaUrl is the *source
+    // page* (a tweet, a YouTube page, whatever) — not an image — and using
+    // it as an <img src> always renders broken. Only ever start from a real
+    // candidate: the scraped thumbnail, or (for a direct upload) the file
+    // itself when the upload actually is an image.
+    const uploadIsImage = submission.media_path ? inferType(submission.media_path) === 'image' : false;
+    let thumbnailUrl: string | null = submission.thumbnail_url ?? (uploadIsImage ? storageUrl : null);
+
     if (thumbnailUrl && thumbnailUrl !== storageUrl) {
-      const rehosted = await rehostThumbnail(thumbnailUrl, admin, bucket);
-      if (rehosted) thumbnailUrl = rehosted;
+      // Re-hosting also doubles as verification here: rehostThumbnail refuses
+      // anything whose response isn't actually image/* content, so a stray
+      // non-image URL that slipped through gets dropped (→ null) rather than
+      // stored and shown as a broken image on the published evidence.
+      thumbnailUrl = await rehostThumbnail(thumbnailUrl, admin, bucket);
     }
     const evidenceSlug = slugify(submission.title);
 

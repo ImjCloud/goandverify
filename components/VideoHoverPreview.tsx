@@ -1,6 +1,7 @@
 'use client';
 import {useEffect, useState} from 'react';
 import {getEmbed} from '@/lib/embed';
+import {MediaFallback} from '@/components/MediaFallback';
 
 /** True only on devices with a real pointer that can hover (mouse/trackpad).
  *  Touch devices report `hover: none`, so this stays false there — matches
@@ -20,18 +21,21 @@ function useCanHover() {
   return canHover;
 }
 
-export function VideoHoverPreview({mediaUrl, thumbnail, alt, imgClassName}: {mediaUrl?: string | null; thumbnail: string; alt: string; imgClassName?: string}) {
+export function VideoHoverPreview({mediaUrl, thumbnail, alt, imgClassName}: {mediaUrl?: string | null; thumbnail?: string | null; alt: string; imgClassName?: string}) {
   const canHover = useCanHover();
   const [hover, setHover] = useState(false);
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
 
-  // X/Twitter has no chromeless, silently-autoplaying iframe the way
-  // YouTube/Vimeo/TikTok do — the only official embed is their full
-  // interactive widget, which isn't a good fit for a small hover preview.
-  // Treat it like "no provider": show the thumbnail, and let the click-through
-  // to the evidence detail page render the real embed instead.
-  if (!embed.provider || embed.provider === 'twitter') {
-    return <img src={thumbnail} alt={alt} className={imgClassName} />;
+  // X/Twitter/Instagram/Facebook/Threads have no chromeless, silently-
+  // autoplaying iframe the way YouTube/Vimeo/TikTok do — their only official
+  // embed is the full interactive widget, which isn't a good fit for a small
+  // hover preview. Treat those like "no provider": show the thumbnail (or the
+  // fallback, if there isn't one), and let the click-through to the evidence
+  // detail page render the real embed instead.
+  const hoverEmbeddable = embed.provider === 'youtube' || embed.provider === 'vimeo' || embed.provider === 'tiktok' || embed.provider === 'file';
+
+  if (!hoverEmbeddable) {
+    return thumbnail ? <img src={thumbnail} alt={alt} className={imgClassName} /> : <MediaFallback className={imgClassName} />;
   }
 
   const videoId = embed.embedUrl?.split('/').pop();
@@ -55,7 +59,11 @@ export function VideoHoverPreview({mediaUrl, thumbnail, alt, imgClassName}: {med
       onMouseEnter={() => canHover && setHover(true)}
       onMouseLeave={() => canHover && setHover(false)}
     >
-      <img src={thumbnail} alt={alt} className={`${imgClassName ?? ''} transition-opacity duration-200 ${active ? 'opacity-0' : 'opacity-100'}`} />
+      {thumbnail ? (
+        <img src={thumbnail} alt={alt} className={`${imgClassName ?? ''} transition-opacity duration-200 ${active ? 'opacity-0' : 'opacity-100'}`} />
+      ) : (
+        <MediaFallback className={`${imgClassName ?? ''} transition-opacity duration-200 ${active ? 'opacity-0' : 'opacity-100'}`} />
+      )}
       {active &&
         (embed.provider === 'file' ? (
           <video src={previewSrc} autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover" />

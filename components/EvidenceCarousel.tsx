@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {ArrowUpRight,CheckCircle2,AlertTriangle,Clock3,Archive} from 'lucide-react';
 import type {Evidence} from '@/lib/data';
 import {VideoHoverPreview} from '@/components/VideoHoverPreview';
+import {MediaFallback} from '@/components/MediaFallback';
 
 const icon=(v:Evidence['verification'])=>v==='Source Verified'||v==='Partially Verified'?<CheckCircle2 size={13}/>:v==='Disputed'?<AlertTriangle size={13}/>:v==='Archived'?<Archive size={13}/>:<Clock3 size={13}/>;
 
@@ -28,7 +29,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
               onFocus={()=>setActive(i)}
             >
               <div className="ev-panel-media">
-                {item.type==='video'?<VideoHoverPreview mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:<img src={item.image} alt={item.title} className="ev-panel-img"/>}
+                {item.type==='video'?<VideoHoverPreview mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
                 <span className="ev-panel-type">{item.type}</span>
                 <span className="ev-panel-vertical editorial-serif">{item.title}</span>
               </div>
@@ -55,7 +56,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
         {items.map(item=>(
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
-              {item.type==='video'?<VideoHoverPreview mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>}
+              {item.type==='video'?<VideoHoverPreview mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:item.image?<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>:<MediaFallback className="h-full w-full object-cover"/>}
               <div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{item.type}</div>
             </div>
             <div className="p-5">

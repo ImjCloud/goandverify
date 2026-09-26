@@ -30,7 +30,12 @@ function rowToEvidence(row: any): Evidence {
     sourceUrl: row.source_url ?? '#',
     description: row.description,
     verification: DB_TO_UI_VERIFICATION[row.verification_status] ?? 'Under Review',
-    image: row.thumbnail_url ?? row.media_url ?? '/evidence-1.svg',
+    // `image` used to fall back to `media_url` when there was no thumbnail —
+    // but media_url is a page link (a tweet, a YouTube page…), not a
+    // picture, so an <img src> pointed at it always rendered broken. null
+    // means "genuinely no thumbnail"; every place that renders `image` shows
+    // MediaFallback for that case instead of a broken image icon.
+    image: row.thumbnail_url ?? null,
     // Kept distinct from `image`: image is always the display thumbnail
     // (often a .jpg even for a video), mediaUrl is the actual underlying
     // link (YouTube/Vimeo/file URL) used to detect and build an embed.
