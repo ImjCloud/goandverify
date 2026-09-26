@@ -26,10 +26,30 @@ function extractVimeoId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+// og:image / og:title values are pulled out of raw HTML with a regex, not an
+// HTML parser, so any entity the source page encoded (X/Twitter's og:image
+// is a real example: `...?format=webp&amp;name=large`) comes through as
+// literal text instead of a decoded character. An `&amp;` left in a URL
+// isn't a valid query-string separator, so the request 404s downstream and
+// the image just looks "broken" with no error anywhere obvious. Decode the
+// handful of entities that actually show up in meta tags before using the
+// value for anything.
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)));
+}
+
 // Basic SSRF guard: refuse to let the server fetch internal/private
 // addresses on the submitter's behalf (localhost, RFC1918 ranges, and the
 // 169.254.169.254 link-local range used by cloud metadata services).
-async function isPrivateHost(hostname: string): Promise<boolean> {
+export async function isPrivateHost(hostname: string): Promise<boolean> {
   if (['localhost', '0.0.0.0'].includes(hostname)) return true;
   try {
     const {address} = await dns.lookup(hostname);
@@ -124,8 +144,10 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreview> {
       html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, 'i'))?.[1] ??
       null;
 
-    const title = metaContent('og:title') ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
-    const image = metaContent('og:image');
+    const rawTitle = metaContent('og:title') ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
+    const rawImage = metaContent('og:image');
+    const title = rawTitle ? decodeHtmlEntities(rawTitle) : null;
+    const image = rawImage ? decodeHtmlEntities(rawImage) : null;
     return {mediaUrl: rawUrl, thumbnailUrl: image, title, mediaType: 'webpage'};
   } catch {
     return {mediaUrl: rawUrl, thumbnailUrl: null, title: null, mediaType: 'webpage'};

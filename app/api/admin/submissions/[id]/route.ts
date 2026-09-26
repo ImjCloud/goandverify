@@ -1,8 +1,10 @@
 import {NextRequest, NextResponse} from 'next/server';
+import {randomUUID} from 'crypto';
 import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
 import {logAudit} from '@/lib/auditLog';
 import {archiveUrl} from '@/lib/wayback';
+import {isPrivateHost} from '@/lib/linkPreview';
 
 const UI_TO_DB_VERIFICATION: Record<string, string> = {
   'User Submitted': 'submitted',
@@ -24,8 +26,45 @@ function inferType(pathOrUrl: string | null): 'image' | 'video' | 'audio' | 'doc
   if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'svg'].includes(ext)) return 'image';
   if (['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video';
   if (['mp3', 'wav', 'm4a', 'ogg'].includes(ext)) return 'audio';
-  if (/youtube\.com|youtu\.be|vimeo\.com/i.test(pathOrUrl ?? '')) return 'video';
+  if (/youtube\.com|youtu\.be|vimeo\.com|tiktok\.com/i.test(pathOrUrl ?? '')) return 'video';
+  if (/(?:^|\/\/)(?:www\.|m\.)?(?:twitter|x)\.com\/[^/]+\/status\/\d+/i.test(pathOrUrl ?? '')) return 'video';
   return 'document';
+}
+
+// A submission's thumbnail_url usually comes straight from another site's
+// og:image (see lib/linkPreview.ts) — some of those are signed CDN URLs that
+// expire, or otherwise stop resolving from our domain, which shows up later
+// as a permanently broken image on published evidence with no obvious error.
+// Download it once at approval time and keep our own copy in storage instead
+// of hotlinking someone else's URL forever. Best-effort: on any failure, the
+// caller just keeps using the original URL — this must never block approval.
+async function rehostThumbnail(url: string, admin: ReturnType<typeof supabaseAdmin>, bucket: string): Promise<string | null> {
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    if (await isPrivateHost(parsed.hostname)) return null;
+
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {'User-Agent': 'Mozilla/5.0 (compatible; EvidenceGalleryThumbnail/1.0)'},
+    });
+    if (!res.ok) return null;
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) return null;
+
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > 15 * 1024 * 1024) return null;
+
+    const ext = contentType.split('/')[1]?.split(';')[0]?.replace(/[^a-z0-9]/gi, '') || 'jpg';
+    const path = `thumbnails/${randomUUID()}.${ext}`;
+    const {error} = await admin.storage.from(bucket).upload(path, bytes, {contentType});
+    if (error) return null;
+
+    return admin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  } catch {
+    return null; // network error, timeout, bad URL, etc. — fall back to the original
+  }
 }
 
 export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: string}>}) {
@@ -47,7 +86,13 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
       ? admin.storage.from(bucket).getPublicUrl(submission.media_path).data.publicUrl
       : null;
     const mediaUrl = storageUrl ?? submission.media_url ?? null;
-    const thumbnailUrl = submission.thumbnail_url ?? storageUrl ?? mediaUrl;
+    let thumbnailUrl = submission.thumbnail_url ?? storageUrl ?? mediaUrl;
+    // Only re-host a thumbnail that actually points at a third party — if it's
+    // already our own uploaded-file storage URL, there's nothing to protect it from.
+    if (thumbnailUrl && thumbnailUrl !== storageUrl) {
+      const rehosted = await rehostThumbnail(thumbnailUrl, admin, bucket);
+      if (rehosted) thumbnailUrl = rehosted;
+    }
     const evidenceSlug = slugify(submission.title);
 
     const {data: evidenceRow, error: evidenceError} = await admin

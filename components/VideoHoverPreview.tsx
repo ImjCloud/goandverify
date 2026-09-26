@@ -25,7 +25,12 @@ export function VideoHoverPreview({mediaUrl, thumbnail, alt, imgClassName}: {med
   const [hover, setHover] = useState(false);
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
 
-  if (!embed.provider) {
+  // X/Twitter has no chromeless, silently-autoplaying iframe the way
+  // YouTube/Vimeo/TikTok do — the only official embed is their full
+  // interactive widget, which isn't a good fit for a small hover preview.
+  // Treat it like "no provider": show the thumbnail, and let the click-through
+  // to the evidence detail page render the real embed instead.
+  if (!embed.provider || embed.provider === 'twitter') {
     return <img src={thumbnail} alt={alt} className={imgClassName} />;
   }
 
@@ -35,6 +40,8 @@ export function VideoHoverPreview({mediaUrl, thumbnail, alt, imgClassName}: {med
       ? `${embed.embedUrl}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1`
       : embed.provider === 'vimeo'
       ? `${embed.embedUrl}?autoplay=1&muted=1&loop=1&background=1`
+      : embed.provider === 'tiktok'
+      ? `${embed.embedUrl}?autoplay=1&muted=1&controls=0`
       : embed.embedUrl!;
 
   // On touch devices, never mount the hover preview — a tap should always
