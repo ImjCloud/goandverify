@@ -31,7 +31,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
               <div className="ev-panel-media">
                 {item.type==='video'?<VideoHoverPreview mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
                 <span className="ev-panel-type">{item.type}</span>
-                <span className="ev-panel-vertical editorial-serif">{item.title}</span>
+                {!isActive && <span className="ev-panel-vertical editorial-serif">{item.title}</span>}
               </div>
               <div className="ev-panel-summary">
                 <div className="ev-panel-meta">
