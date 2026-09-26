@@ -32,7 +32,7 @@ export function ElectionCountdown() {
     <section className="election-countdown" aria-label="Countdown to the 2027 general election">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[.25em] text-[var(--accent)]">2027 election cycle</p>
+          <p className="eyebrow-live text-[10px] font-bold uppercase tracking-[.25em] text-[var(--accent)]">2027 election cycle</p>
           <p className="mt-1 text-xs text-[var(--muted)]">Countdown to election day · 16 January 2027, 8:00 AM WAT</p>
         </div>
         {remaining?.complete ? (
@@ -40,8 +40,11 @@ export function ElectionCountdown() {
         ) : (
           <div className="countdown-grid" role="timer" aria-label="Time remaining until 16 January 2027 at 8 AM West Africa Time">
             {[['days', remaining?.days ?? 0], ['hours', remaining?.hours ?? 0], ['minutes', remaining?.minutes ?? 0], ['seconds', remaining?.seconds ?? 0]].map(([label, value]) => (
-              <div key={label} className="countdown-unit">
-                <strong>{label === 'days' ? value : pad(Number(value))}</strong>
+              <div key={label} className={label === 'seconds' ? 'countdown-unit is-seconds' : 'countdown-unit'}>
+                {/* key={value} forces a remount whenever this unit's number changes, so the
+                    tick animation only replays on an actual change (every second for
+                    "seconds", only on rollover for the rest) rather than on every render. */}
+                <strong key={value}>{label === 'days' ? value : pad(Number(value))}</strong>
                 <span>{label}</span>
               </div>
             ))}

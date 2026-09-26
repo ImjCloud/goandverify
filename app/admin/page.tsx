@@ -289,13 +289,13 @@ export default function Admin() {
       </div>
 
       <div className="mt-10 inline-flex overflow-hidden rounded-full border border-white/15">
-        <button onClick={() => setTab('submissions')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'submissions' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
+        <button onClick={() => setTab('submissions')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'submissions' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
           Submissions
         </button>
-        <button onClick={() => setTab('flags')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'flags' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
+        <button onClick={() => setTab('flags')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'flags' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
           Flags {flags.filter(f => f.status === 'open').length > 0 && `(${flags.filter(f => f.status === 'open').length})`}
         </button>
-        <button onClick={() => setTab('adverts')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'adverts' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
+        <button onClick={() => setTab('adverts')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'adverts' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
           Adverts {ads.filter(ad => ad.status === 'pending').length > 0 && `(${ads.filter(ad => ad.status === 'pending').length})`}
         </button>
       </div>

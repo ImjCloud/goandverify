@@ -153,10 +153,10 @@ export default function Submit() {
         <div>
           <span className="text-sm font-semibold">The evidence itself</span>
           <div className="mt-2 inline-flex overflow-hidden rounded-full border border-white/15">
-            <button type="button" onClick={() => setMode('file')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'file' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
+            <button type="button" onClick={() => setMode('file')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'file' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
               <UploadCloud size={13} className="mr-1.5 inline" /> Upload a file
             </button>
-            <button type="button" onClick={() => setMode('link')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'link' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-white text-black'}`}>
+            <button type="button" onClick={() => setMode('link')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${mode === 'link' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
               <Link2 size={13} className="mr-1.5 inline" /> Paste a link
             </button>
           </div>
