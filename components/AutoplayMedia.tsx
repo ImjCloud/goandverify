@@ -41,10 +41,10 @@ function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string
   if (embed.provider === 'twitter') return twitterVideoSrc ? {kind: 'video', src: twitterVideoSrc} : null;
   if (embed.provider === 'youtube') {
     const id = embed.embedUrl?.split('/').pop();
-    return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&mute=1&controls=0&loop=1&playlist=' + id + '&modestbranding=1'};
+    return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&mute=1&controls=0&loop=1&playlist=' + id + '&modestbranding=1&playsinline=1'};
   }
-  if (embed.provider === 'vimeo') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&loop=1&background=1'};
-  if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0'};
+  if (embed.provider === 'vimeo') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&loop=1&background=1&playsinline=1'};
+  if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0&playsinline=1'};
   return null;
 }
 
@@ -70,12 +70,28 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const playMode = getPlayMode(embed, twitterVideoSrc);
   // Twitter needs the observed wrapper mounted before its video URL resolves.
   const observable = playMode !== null || isTwitter;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || playMode?.kind !== 'video') return;
+    if (inView) {
+      video.play().catch(() => {
+        // Muted + inline playback is eligible for autoplay; this catch keeps
+        // a browser/device policy rejection from breaking the card.
+      });
+    } else {
+      video.pause();
+    }
+  }, [inView, playMode?.kind, playMode?.src]);
 
   if (!observable) {
     return thumbnail ? <img src={thumbnail} alt={alt} className={imgClassName} /> : <MediaFallback className={imgClassName} />;
   }
 
   const active = inView && playMode !== null;
+  const showVideo = playMode?.kind === 'video';
+  const showIframe = active && playMode?.kind === 'iframe';
 
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden">
@@ -84,12 +100,20 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
       ) : (
         <MediaFallback className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} />
       )}
-      {active &&
-        (playMode.kind === 'video' ? (
-          <video src={playMode.src} autoPlay muted loop playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <iframe src={playMode.src} className="absolute inset-0 h-full w-full" allow="autoplay; encrypted-media" title={alt} />
-        ))}
+      {showVideo && playMode && (
+        <video
+          ref={videoRef}
+          src={playMode.src}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
+      {showIframe && playMode.kind === 'iframe' && (
+        <iframe src={playMode.src} className="absolute inset-0 h-full w-full" allow="autoplay; encrypted-media" title={alt} />
+      )}
     </div>
   );
 }
