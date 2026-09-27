@@ -75,8 +75,15 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
 .ev-panel-desc{margin-top:10px;font-size:13px;line-height:1.6;color:rgba(244,241,234,.8);max-width:44ch;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .ev-panel-source{display:flex;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(244,241,234,.18);font-size:11px;color:rgba(244,241,234,.7)}
 .ev-panel-cta{display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-size:12px;font-weight:700;color:var(--accent)}
-.ev-mobile-rail{gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-.ev-mobile-card{scroll-snap-align:center;min-width:84%;border:1px solid var(--line);background:var(--surface);flex:0 0 auto}
+.ev-mobile-rail{display:flex;width:100%;max-width:100%;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+/* flex:0 0 84% (not min-width alone) pins the card to exactly 84% of the
+   rail regardless of content — a long evidence title/description with no
+   natural break point could otherwise stretch the card past its intended
+   width with only a min-width floor, throwing off the snap sizing on
+   narrow phones. min-width:0 stops the flex item's default content-based
+   minimum from fighting that fixed basis. */
+.ev-mobile-card{scroll-snap-align:center;flex:0 0 84%;width:84%;min-width:0;max-width:84%;border:1px solid var(--line);background:var(--surface);overflow:hidden}
+.ev-mobile-card h3,.ev-mobile-card p{overflow-wrap:anywhere}
 .ev-mobile-rail::-webkit-scrollbar{display:none}
 
 /* ---------- Giving page: numbers pop + change colour on hover ---------- */
