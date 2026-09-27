@@ -404,7 +404,7 @@ export default function Admin() {
                 <tr key={ad.id} className="border-b border-white/10 last:border-0 align-top">
                   <td className="px-5 py-5">
                     <div className="flex gap-3">
-                      {ad.media_type === 'video' && ad.media_url ? <video src={ad.media_url} muted className="h-14 w-20 shrink-0 rounded object-cover" /> : ad.media_type === 'image' && (ad.media_url || ad.image_url) ? <img src={ad.media_url || ad.image_url || ''} alt="" className="h-14 w-20 shrink-0 rounded object-cover" /> : <div className="h-14 w-20 shrink-0 rounded bg-[var(--surface-2)]" />}
+                      {ad.media_type === 'video' && ad.media_url ? <video src={ad.media_url} muted className="h-14 w-20 shrink-0 rounded object-cover" /> : (ad.media_url || ad.image_url) ? <img src={ad.media_url || ad.image_url || ''} alt="" className="h-14 w-20 shrink-0 rounded object-cover" /> : <div className="h-14 w-20 shrink-0 rounded bg-[var(--surface-2)]" />}
                       <div><div className="font-bold">{ad.title}</div><p className="mt-1 max-w-md text-xs text-[var(--muted)]">{ad.description}</p><a href={ad.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">Open destination</a></div>
                     </div>
                   </td>
