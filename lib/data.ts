@@ -33,7 +33,7 @@ export const people:Person[]=[
    {year:'30 May 2026',title:'NDC presidential candidate',text:'Ratified unopposed as the Nigeria Democratic Congress presidential candidate, with Rabiu Kwankwaso as running mate, for the election set for 16 January 2027.',source:'peterobi.online',sourceUrl:'https://peterobi.online/'},
    {year:'Since 2020',title:'Over ₦1.15bn in documented giving',text:'Donations to hospitals, nursing colleges, schools and a university are individually recorded, each linked to its own source rather than presented as a single unverified total.',source:'peterobi.online',sourceUrl:'https://peterobi.online/giving/'},
   ]},
- {slug:'rabiu-kwankwaso',name:'Rabiu Musa Kwankwaso',role:'Running Mate — 2027',party:party.name,bio:'Nigerian politician and former Kano State Governor. This profile presents public records, political roles and evidence with source and date context.',image:'/kwankwaso.svg',
+ {slug:'rabiu-kwankwaso',name:'Rabiu Musa Kwankwaso',role:'Running Mate — 2027',party:party.name,bio:"Nigerian politician and engineer, born in Kwankwaso village, Kano State, in 1956. He served two terms as Governor of Kano State (1999–2003 and 2011–2015) and was Nigeria's first civilian Minister of Defence of the Fourth Republic (2003–2007) under President Olusegun Obasanjo. He later represented Kano Central in the Senate (2015–2019) and was the New Nigeria Peoples Party's presidential candidate in 2023. He now runs alongside Peter Obi on the Nigeria Democratic Congress ticket for the 2027 election.",image:'/kwankwaso.svg',
   gallery:[
    {src:'/kwankwaso-1.svg',alt:'Rabiu Kwankwaso — public appearance, placeholder image 1',caption:'Placeholder — replace with sourced, licensed photograph'},
    {src:'/kwankwaso-2.svg',alt:'Rabiu Kwankwaso — public appearance, placeholder image 2',caption:'Placeholder — replace with sourced, licensed photograph'},
@@ -42,8 +42,14 @@ export const people:Person[]=[
    {src:'/kwankwaso-5.svg',alt:'Rabiu Kwankwaso — public appearance, placeholder image 5',caption:'Placeholder — replace with sourced, licensed photograph'},
   ],
   timeline:[
-   {year:'1956',title:'Early life',text:'Biographical milestone — replace with verified source material.'},
-   {year:'1999–2003',title:'Kano State',text:'Governorship record — populate from authoritative sources.'},
+   {year:'1956',title:'Born in Kwankwaso village',text:'Rabi\u2019u Musa Kwankwaso is born on 21 October 1956 in Kwankwaso village, Madobi Local Government Area, Kano State.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'1985',title:'Trained as a water engineer',text:'Completes a master\u2019s degree in water engineering at Loughborough University of Technology in the UK, after earlier postgraduate study at Middlesex Polytechnic.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'1992–1993',title:'Deputy Speaker of the House of Representatives',text:'Elected to the House of Representatives for the Madobi constituency and serves as Deputy Speaker.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'1999–2003',title:'First term as Governor of Kano State',text:'Elected Governor of Kano State, serving a first term from 29 May 1999 to 29 May 2003.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'2003–2007',title:'Minister of Defence',text:'Appointed Minister of Defence under President Olusegun Obasanjo \u2014 the first civilian to hold the post in Nigeria\u2019s Fourth Republic.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'2011–2015',title:'Second term as Governor of Kano State',text:'Re-elected Governor of Kano State for a second term, from 29 May 2011 to 29 May 2015.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'2015–2019',title:'Senator for Kano Central',text:'Elected to the Senate representing Kano Central under the All Progressives Congress, serving one term.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
+   {year:'2022–2023',title:'NNPP presidential candidate',text:'Becomes national leader of the New Nigeria Peoples Party and its presidential candidate in the 2023 general election.',source:'Wikipedia',sourceUrl:'https://en.wikipedia.org/wiki/Rabiu_Kwankwaso'},
    {year:'30 May 2026',title:'NDC running mate',text:'Announced as Peter Obi\u2019s running mate on the Nigeria Democratic Congress presidential ticket, for the election set for 16 January 2027.',source:'peterobi.online',sourceUrl:'https://peterobi.online/'},
   ]}
 ];
