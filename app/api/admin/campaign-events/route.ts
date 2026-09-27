@@ -69,8 +69,9 @@ export async function POST(req: NextRequest) {
   const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads';
 
   if (file) {
-    mediaType = inferMediaKind(file) as 'image' | 'video';
-    if (mediaType === 'none') return NextResponse.json({error: 'Upload a supported campaign image or video.'}, {status: 400});
+    const inferredMediaType = inferMediaKind(file);
+    if (inferredMediaType === 'none') return NextResponse.json({error: 'Upload a supported campaign image or video.'}, {status: 400});
+    mediaType = inferredMediaType;
     if (file.size > 30 * 1024 * 1024) return NextResponse.json({error: 'Upload an image or video file up to 30MB.'}, {status: 400});
     const extension = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
     mediaPath = `campaign-events/${randomUUID()}.${extension}`;
