@@ -39,6 +39,14 @@ export async function POST(req: NextRequest) {
   const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
   const mediaUrlInput = value('mediaUrl') || null;
   const thumbnailUrl = value('thumbnailUrl') || null;
+  if (thumbnailUrl) {
+    try {
+      const poster = new URL(thumbnailUrl);
+      if (!['http:', 'https:'].includes(poster.protocol)) throw new Error();
+    } catch {
+      return NextResponse.json({error: 'The poster/thumbnail URL must be a valid http/https URL.'}, {status: 400});
+    }
+  }
 
   if (!title) return NextResponse.json({error: 'Campaign event title is required.'}, {status: 400});
   if (!file && !mediaUrlInput) return NextResponse.json({error: 'Provide a campaign image/video file or a media link.'}, {status: 400});
