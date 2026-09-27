@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const href = value('href') || null;
   const rawFile = form.get('mediaFile');
   const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
-  const mediaUrlInput = value('mediaUrl') || null;
+  const mediaUrlInput = value('mediaUrl');
   const thumbnailUrl = value('thumbnailUrl') || null;
   if (thumbnailUrl) {
     try {
