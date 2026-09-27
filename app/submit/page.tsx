@@ -2,6 +2,7 @@
 import {useState, useRef, useCallback} from 'react';
 import {UploadCloud, CheckCircle2, AlertTriangle, Loader2, Link2, LinkIcon, Play} from 'lucide-react';
 import {AutoplayMedia} from '@/components/AutoplayMedia';
+import {getEmbed} from '@/lib/embed';
 
 type Preview = {
   thumbnailUrl: string | null;
@@ -19,6 +20,7 @@ export default function Submit() {
   const [preview, setPreview] = useState<Preview>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const previewIsPlayableVideo = ['youtube', 'vimeo', 'video-file'].includes(preview?.mediaType ?? '') || ['youtube', 'vimeo', 'tiktok', 'twitter', 'file'].includes(getEmbed(mediaUrl).provider ?? '');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchPreview = useCallback((url: string) => {
