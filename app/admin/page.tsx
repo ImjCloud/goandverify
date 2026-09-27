@@ -331,9 +331,9 @@ export default function Admin() {
     <main className="mx-auto max-w-7xl px-5 py-12 md:py-16">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
-          <p className="eyebrow">Moderation console</p>
+          <p className="eyebrow">Moderation & campaign publishing</p>
           <h1 className="editorial-serif mt-3 text-5xl md:text-7xl">Evidence review.</h1>
-          <p className="mt-4 max-w-2xl text-[var(--muted)]">Review provenance and metadata before material enters the public archive.</p>
+          <p className="mt-4 max-w-2xl text-[var(--muted)]">Review evidence submissions, then manage the campaign media that powers the public What's New section.</p>
         </div>
         <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">
           View public archive
@@ -536,8 +536,9 @@ export default function Admin() {
               if (ok) form.reset();
             }}
           >
+            <div className="sm:col-span-2 border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 text-sm leading-6 text-[var(--muted)]">Only media uploaded through this portal appears in <strong className="text-[var(--ink)]">What's New</strong>. Each campaign update must include an image or video.</div>
             <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
-              Title
+              Campaign event title
               <input name="title" required className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
             </label>
             <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
@@ -553,8 +554,8 @@ export default function Admin() {
               <input name="location" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
             </label>
             <label className="grid gap-1 text-xs font-semibold">
-              Photo or video <span className="font-normal text-[var(--muted)]">(optional)</span>
-              <input name="mediaFile" type="file" accept="image/*,video/*" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+              Photo or video <span className="font-normal text-[var(--accent)]">(required)</span>
+              <input name="mediaFile" type="file" required accept="image/*,video/*" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
             </label>
             <label className="grid gap-1 text-xs font-semibold">
               More-info link <span className="font-normal text-[var(--muted)]">(optional)</span>
@@ -562,7 +563,7 @@ export default function Admin() {
             </label>
             {eventError && <p className="text-xs font-semibold text-red-700 sm:col-span-2">{eventError}</p>}
             <button disabled={eventSaving} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#15130f] disabled:opacity-50 sm:col-span-2 sm:w-fit">
-              {eventSaving ? 'Adding...' : 'Add event'}
+              {eventSaving ? 'Uploading...' : 'Publish campaign update'}
             </button>
           </form>
 
@@ -587,7 +588,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
-            {!eventsLoading && events.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No campaign events yet.</div>}
+            {!eventsLoading && events.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No campaign uploads yet. Upload an image or video above to populate What's New.</div>}
             {eventsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading events…</div>}
           </div>
         </div>
