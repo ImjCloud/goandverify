@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
   const href = value('href') || null;
   const rawFile = form.get('mediaFile');
   const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
-  const mediaUrlInput = value('mediaUrl');
+  const rawMediaUrl = form.get('mediaUrl');
+  const mediaUrlInput = typeof rawMediaUrl === 'string' ? rawMediaUrl.trim() : '';
   const thumbnailUrl = value('thumbnailUrl') || null;
   if (thumbnailUrl) {
     try {
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     if (mediaType === 'image') storedThumbnail = mediaUrl;
   } else {
     try {
-      const parsed = new URL(mediaUrlInput!);
+      const parsed = new URL(mediaUrlInput);
       if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
     } catch {
       return NextResponse.json({error: 'The campaign media link must be a valid http/https URL.'}, {status: 400});
