@@ -30,6 +30,19 @@ const STATUS_LABEL: Record<Submission['status'], string> = {
 
 const VERIFICATION_OPTIONS = ['User Submitted', 'Under Review', 'Partially Verified', 'Source Verified', 'Disputed', 'Archived'];
 
+type CampaignEventRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  event_date: string | null;
+  location: string | null;
+  media_type: 'image' | 'video' | 'none';
+  media_url: string | null;
+  image_url: string | null;
+  href: string | null;
+  created_at: string;
+};
+
 type FlagRow = {
   id: string;
   reason: string;
@@ -65,7 +78,12 @@ export default function Admin() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [tab, setTab] = useState<'submissions' | 'flags' | 'adverts'>('submissions');
+  const [tab, setTab] = useState<'submissions' | 'flags' | 'adverts' | 'events'>('submissions');
+  const [events, setEvents] = useState<CampaignEventRow[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventBusyId, setEventBusyId] = useState<string | null>(null);
+  const [eventSaving, setEventSaving] = useState(false);
+  const [eventError, setEventError] = useState<string | null>(null);
   const [rows, setRows] = useState<Submission[]>([]);
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [flagsLoading, setFlagsLoading] = useState(false);
@@ -137,6 +155,46 @@ export default function Admin() {
     }
   }
 
+  async function loadEvents() {
+    setEventsLoading(true);
+    try {
+      const res = await fetch('/api/admin/campaign-events');
+      const data = await res.json();
+      if (res.ok) setEvents(data.events ?? []);
+    } finally {
+      setEventsLoading(false);
+    }
+  }
+
+  async function createEvent(form: FormData) {
+    setEventSaving(true);
+    setEventError(null);
+    try {
+      const res = await fetch('/api/admin/campaign-events', {method: 'POST', body: form});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEventError(data.error || 'Could not save the event.');
+        return;
+      }
+      await loadEvents();
+      return true;
+    } catch {
+      setEventError('Could not save the event.');
+    } finally {
+      setEventSaving(false);
+    }
+  }
+
+  async function deleteEvent(id: string) {
+    setEventBusyId(id);
+    try {
+      const res = await fetch(`/api/admin/campaign-events/${id}`, {method: 'DELETE'});
+      if (res.ok) setEvents(prev => prev.filter(e => e.id !== id));
+    } finally {
+      setEventBusyId(null);
+    }
+  }
+
   async function loadSubmissions() {
     setLoading(true);
     setLoadError(null);
@@ -172,6 +230,7 @@ export default function Admin() {
   useEffect(() => {
     if (tab === 'flags' && flags.length === 0) loadFlags();
     if (tab === 'adverts' && ads.length === 0) loadAds();
+    if (tab === 'events' && events.length === 0) loadEvents();
   }, [tab]);
 
   async function handleLogin(e: React.FormEvent) {
@@ -297,6 +356,9 @@ export default function Admin() {
         </button>
         <button onClick={() => setTab('adverts')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'adverts' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
           Adverts {ads.filter(ad => ad.status === 'pending').length > 0 && `(${ads.filter(ad => ad.status === 'pending').length})`}
+        </button>
+        <button onClick={() => setTab('events')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${tab === 'events' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)] text-[var(--ink)]'}`}>
+          Events
         </button>
       </div>
 
@@ -460,6 +522,74 @@ export default function Admin() {
           </table>
           {!flagsLoading && flags.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No reports yet.</div>}
           {flagsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading reports…</div>}
+        </div>
+      )}
+
+      {tab === 'events' && (
+        <div className="mt-6">
+          <form
+            className="grid gap-4 border border-white/10 bg-[var(--surface)] p-5 sm:grid-cols-2"
+            onSubmit={async e => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const ok = await createEvent(new FormData(form));
+              if (ok) form.reset();
+            }}
+          >
+            <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
+              Title
+              <input name="title" required className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
+              Description
+              <textarea name="description" rows={2} className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold">
+              Date
+              <input name="eventDate" type="date" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold">
+              Location
+              <input name="location" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold">
+              Photo or video <span className="font-normal text-[var(--muted)]">(optional)</span>
+              <input name="mediaFile" type="file" accept="image/*,video/*" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold">
+              More-info link <span className="font-normal text-[var(--muted)]">(optional)</span>
+              <input name="href" type="url" placeholder="https://..." className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+            </label>
+            {eventError && <p className="text-xs font-semibold text-red-700 sm:col-span-2">{eventError}</p>}
+            <button disabled={eventSaving} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#15130f] disabled:opacity-50 sm:col-span-2 sm:w-fit">
+              {eventSaving ? 'Adding...' : 'Add event'}
+            </button>
+          </form>
+
+          <div className="mt-6 overflow-x-auto border border-white/10 bg-[var(--surface)]">
+            <table className="min-w-[800px] w-full text-left text-sm">
+              <thead className="border-b border-white/10 bg-[var(--surface)]">
+                <tr>{['Event', 'Date', 'Location', 'Action'].map(h => <th key={h} className="px-5 py-4 font-bold">{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {events.map(ev => (
+                  <tr key={ev.id} className="border-b border-white/10 last:border-0 align-top">
+                    <td className="px-5 py-5">
+                      <div className="flex gap-3">
+                        {ev.media_type === 'video' && ev.media_url ? <video src={ev.media_url} muted className="h-14 w-20 shrink-0 rounded object-cover" /> : (ev.media_url || ev.image_url) ? <img src={ev.media_url || ev.image_url || ''} alt="" className="h-14 w-20 shrink-0 rounded object-cover" /> : <div className="h-14 w-20 shrink-0 rounded bg-[var(--surface-2)]" />}
+                        <div><div className="font-bold">{ev.title}</div>{ev.description && <p className="mt-1 max-w-md text-xs text-[var(--muted)]">{ev.description}</p>}</div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-5 text-xs">{ev.event_date || '—'}</td>
+                    <td className="px-5 py-5 text-xs">{ev.location || '—'}</td>
+                    <td className="px-5 py-5"><button disabled={eventBusyId === ev.id} onClick={() => deleteEvent(ev.id)} className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40">{eventBusyId === ev.id ? '...' : 'Delete'}</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!eventsLoading && events.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No campaign events yet.</div>}
+            {eventsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading events…</div>}
+          </div>
         </div>
       )}
 
