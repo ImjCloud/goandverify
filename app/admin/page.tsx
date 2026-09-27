@@ -84,6 +84,9 @@ export default function Admin() {
   const [eventBusyId, setEventBusyId] = useState<string | null>(null);
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
+  const [campaignMediaMode, setCampaignMediaMode] = useState<'file' | 'link'>('file');
+  const [campaignMediaUrl, setCampaignMediaUrl] = useState('');
+  const [campaignPosterUrl, setCampaignPosterUrl] = useState('');
   const [rows, setRows] = useState<Submission[]>([]);
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [flagsLoading, setFlagsLoading] = useState(false);
@@ -533,10 +536,17 @@ export default function Admin() {
               e.preventDefault();
               const form = e.currentTarget;
               const ok = await createEvent(new FormData(form));
-              if (ok) form.reset();
+              if (ok) {
+                form.reset();
+                setCampaignMediaUrl('');
+                setCampaignPosterUrl('');
+                setCampaignMediaMode('file');
+              }
             }}
           >
-            <div className="sm:col-span-2 border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 text-sm leading-6 text-[var(--muted)]">Only media uploaded through this portal appears in <strong className="text-[var(--ink)]">What's New</strong>. Each campaign update must include an image or video.</div>
+            <div className="sm:col-span-2 border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 text-sm leading-6 text-[var(--muted)]">
+              Only campaign media published through this authenticated portal appears in <strong className="text-[var(--ink)]">What's New</strong>. You can upload a file or paste a supported image/video link. Video links use the same 30%-visible scroll autoplay used by Submit Evidence.
+            </div>
             <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
               Campaign event title
               <input name="title" required className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
@@ -553,17 +563,37 @@ export default function Admin() {
               Location
               <input name="location" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
             </label>
-            <label className="grid gap-1 text-xs font-semibold">
-              Photo or video <span className="font-normal text-[var(--accent)]">(required)</span>
-              <input name="mediaFile" type="file" required accept="image/*,video/*" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
-            </label>
-            <label className="grid gap-1 text-xs font-semibold">
+            <div className="sm:col-span-2">
+              <div className="inline-flex overflow-hidden rounded-full border border-white/15">
+                <button type="button" onClick={() => setCampaignMediaMode('file')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${campaignMediaMode === 'file' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)]'}`}>Upload file</button>
+                <button type="button" onClick={() => setCampaignMediaMode('link')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${campaignMediaMode === 'link' ? 'bg-[var(--accent)] text-[#15130f]' : 'bg-[var(--surface-2)]'}`}>Paste media link</button>
+              </div>
+              {campaignMediaMode === 'file' ? (
+                <label className="mt-3 grid gap-1 text-xs font-semibold">
+                  Campaign image or video
+                  <input name="mediaFile" type="file" accept="image/*,video/*" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+                </label>
+              ) : (
+                <div className="mt-3 grid gap-3">
+                  <label className="grid gap-1 text-xs font-semibold">
+                    Image/video link
+                    <input name="mediaUrl" value={campaignMediaUrl} onChange={e => setCampaignMediaUrl(e.target.value)} required={campaignMediaMode === 'link'} type="url" placeholder="YouTube, Vimeo, TikTok, X, direct image/video URL" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+                  </label>
+                  <label className="grid gap-1 text-xs font-semibold">
+                    Video poster / image thumbnail <span className="font-normal text-[var(--muted)]">(optional)</span>
+                    <input name="thumbnailUrl" value={campaignPosterUrl} onChange={e => setCampaignPosterUrl(e.target.value)} type="url" placeholder="https://.../poster.jpg" className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
+                  </label>
+                  <p className="text-xs leading-5 text-[var(--muted)]">For video links, the poster is shown until the card is about 30% visible; then the muted video starts automatically and pauses again when it leaves the viewport.</p>
+                </div>
+              )}
+            </div>
+            <label className="grid gap-1 text-xs font-semibold sm:col-span-2">
               More-info link <span className="font-normal text-[var(--muted)]">(optional)</span>
               <input name="href" type="url" placeholder="https://..." className="border border-white/15 bg-[var(--surface-2)] px-3 py-2 text-sm" />
             </label>
             {eventError && <p className="text-xs font-semibold text-red-700 sm:col-span-2">{eventError}</p>}
             <button disabled={eventSaving} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#15130f] disabled:opacity-50 sm:col-span-2 sm:w-fit">
-              {eventSaving ? 'Uploading...' : 'Publish campaign update'}
+              {eventSaving ? 'Publishing...' : 'Publish campaign update'}
             </button>
           </form>
 
