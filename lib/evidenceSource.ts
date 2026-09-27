@@ -63,22 +63,6 @@ export async function getPublishedEvidence(): Promise<Evidence[]> {
   }
 }
 
-export async function getCampaignHighlights(limit = 8): Promise<Evidence[]> {
-  if (!supabasePublicConfigured) return [];
-  try {
-    const {data, error} = await supabasePublic()
-      .from('evidence')
-      .select('*, tags:evidence_tags(tag:tags(name))')
-      .eq('event_category', 'campaign_activity')
-      .eq('type', 'image')
-      .order('created_at', {ascending: false})
-      .limit(limit);
-    if (error || !data) return [];
-    return data.map(rowToEvidence);
-  } catch {
-    return [];
-  }
-}
 
 export async function searchEvidence(query: string): Promise<Evidence[]> {
   const q = query.trim();
