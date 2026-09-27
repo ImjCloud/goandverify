@@ -56,6 +56,8 @@ export default function Submit() {
     submission.set('eventDate', String(fd.get('eventDate') ?? ''));
     submission.set('sourceUrl', String(fd.get('sourceUrl') ?? ''));
     submission.set('uploaderName', String(fd.get('uploaderName') ?? ''));
+    submission.set('eventCategory', String(fd.get('eventCategory') ?? 'campaign_activity'));
+    submission.set('aboutPerson', String(fd.get('aboutPerson') ?? ''));
     submission.set('consent', fd.get('consent') ? 'true' : 'false');
 
     if (mode === 'file') {
@@ -149,6 +151,25 @@ export default function Submit() {
           Your name <span className="font-normal text-[var(--muted)]">(optional)</span>
           <input name="uploaderName" className="border border-white/15 bg-[var(--surface)] px-4 py-3" />
         </label>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold">
+            What kind of record is this?
+            <select name="eventCategory" required defaultValue="campaign_activity" className="border border-white/15 bg-[var(--surface)] px-4 py-3">
+              <option value="campaign_activity">Campaign activity (rally, visit, appearance)</option>
+              <option value="historical_event">Historical event / past record</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            Who is this about? <span className="font-normal text-[var(--muted)]">(optional)</span>
+            <select name="aboutPerson" defaultValue="" className="border border-white/15 bg-[var(--surface)] px-4 py-3">
+              <option value="">Not specific to one person</option>
+              <option value="peter-obi">Peter Obi</option>
+              <option value="rabiu-kwankwaso">Rabiu Kwankwaso</option>
+              <option value="both">Both</option>
+            </select>
+          </label>
+        </div>
 
         <div>
           <span className="text-sm font-semibold">The evidence itself</span>

@@ -125,6 +125,8 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
         media_url: mediaUrl,
         thumbnail_url: thumbnailUrl,
         verification_status: verificationDb,
+        event_category: submission.event_category ?? 'campaign_activity',
+        about_person: submission.about_person,
         uploader_name: submission.uploader_name,
         verified_at: ['source_verified', 'partially_verified'].includes(verificationDb) ? new Date().toISOString() : null,
       })

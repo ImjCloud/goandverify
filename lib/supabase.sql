@@ -35,6 +35,8 @@ create table if not exists evidence (
  type evidence_type not null, description text not null, event_date date, publication_date date,
  location_city text, location_state text, location_country text, author text, source_name text,
  source_url text, media_url text, thumbnail_url text, verification_status verification_status not null default 'submitted',
+ event_category text check (event_category in ('campaign_activity','historical_event')),
+ about_person text check (about_person in ('peter-obi','rabiu-kwankwaso','both')),
  uploader_name text, uploader_email text, rights text, verified_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
@@ -46,6 +48,8 @@ create table if not exists submissions (
  id uuid primary key default gen_random_uuid(), evidence_id uuid references evidence(id) on delete set null,
  title text not null, description text not null, location text not null, event_date date,
  source_url text, uploader_name text, uploader_email text, media_path text, consent boolean not null default false,
+ event_category text check (event_category in ('campaign_activity','historical_event')),
+ about_person text check (about_person in ('peter-obi','rabiu-kwankwaso','both')),
  status submission_status not null default 'pending_review', reviewer_notes text, reviewed_by uuid, reviewed_at timestamptz,
  created_at timestamptz not null default now()
 );
@@ -250,6 +254,7 @@ alter table ad_requests add column if not exists media_url text;
 alter table ad_requests add column if not exists media_path text;
 alter table ad_requests add column if not exists paused_at timestamptz;
 alter table ad_requests add column if not exists contact_whatsapp text;
+alter table ad_requests add column if not exists rights_confirmed boolean not null default false;
 alter table ad_requests alter column contact_email drop not null;
 alter table ad_requests drop constraint if exists ad_requests_contact_required;
 alter table ad_requests add constraint ad_requests_contact_required

@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
     const eventDate = form.get('eventDate') ? String(form.get('eventDate')) : null;
     const sourceUrl = form.get('sourceUrl') ? String(form.get('sourceUrl')) : null;
     const uploaderName = form.get('uploaderName') ? String(form.get('uploaderName')) : null;
+    const eventCategory = form.get('eventCategory') ? String(form.get('eventCategory')) : 'campaign_activity';
+    const aboutPerson = form.get('aboutPerson') ? String(form.get('aboutPerson')) : null;
     const consent = form.get('consent') === 'true';
     const file = form.get('file') as File | null;
     const mediaUrl = form.get('mediaUrl') ? String(form.get('mediaUrl')).trim() : null;
@@ -94,6 +96,8 @@ export async function POST(req: NextRequest) {
         event_date: eventDate,
         source_url: sourceUrl,
         uploader_name: uploaderName,
+        event_category: eventCategory,
+        about_person: aboutPerson,
         media_path: mediaPath,
         media_url: mediaPath ? null : mediaUrl,
         thumbnail_url: thumbnailUrl,

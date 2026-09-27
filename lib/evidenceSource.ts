@@ -42,6 +42,8 @@ function rowToEvidence(row: any): Evidence {
     mediaUrl: row.media_url ?? null,
     tags: Array.isArray(row.tags) ? row.tags.map((t: any) => t?.tag?.name).filter(Boolean) : [],
     waybackUrl: row.wayback_url ?? null,
+    eventCategory: row.event_category ?? null,
+    aboutPerson: row.about_person ?? null,
   };
 }
 
@@ -58,6 +60,23 @@ export async function getPublishedEvidence(): Promise<Evidence[]> {
     return data.length ? data.map(rowToEvidence) : [];
   } catch {
     return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
+  }
+}
+
+export async function getCampaignHighlights(limit = 8): Promise<Evidence[]> {
+  if (!supabasePublicConfigured) return [];
+  try {
+    const {data, error} = await supabasePublic()
+      .from('evidence')
+      .select('*, tags:evidence_tags(tag:tags(name))')
+      .eq('event_category', 'campaign_activity')
+      .eq('type', 'image')
+      .order('created_at', {ascending: false})
+      .limit(limit);
+    if (error || !data) return [];
+    return data.map(rowToEvidence);
+  } catch {
+    return [];
   }
 }
 
