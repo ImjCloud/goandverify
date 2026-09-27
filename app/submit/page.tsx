@@ -1,6 +1,7 @@
 'use client';
 import {useState, useRef, useCallback} from 'react';
 import {UploadCloud, CheckCircle2, AlertTriangle, Loader2, Link2, LinkIcon, Play} from 'lucide-react';
+import {AutoplayMedia} from '@/components/AutoplayMedia';
 
 type Preview = {
   thumbnailUrl: string | null;
@@ -222,7 +223,9 @@ export default function Submit() {
               {preview && !previewLoading && (
                 <div className="mt-4 flex gap-4 border border-white/10 bg-[var(--surface)] p-4">
                   <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-black">
-                    {preview.thumbnailUrl ? (
+                    {preview.mediaType === 'youtube' || preview.mediaType === 'vimeo' || preview.mediaType === 'video-file' ? (
+                      <AutoplayMedia mediaUrl={mediaUrl} thumbnail={preview.thumbnailUrl} alt={preview.title || 'Video preview'} imgClassName="h-full w-full object-cover" />
+                    ) : preview.thumbnailUrl ? (
                       <img src={preview.thumbnailUrl} alt="Preview" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-white/40">
