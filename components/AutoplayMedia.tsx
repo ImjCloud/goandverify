@@ -4,12 +4,12 @@ import {getEmbed} from '@/lib/embed';
 import {getTweetVideoUrl} from '@/lib/twitterVideo';
 import {MediaFallback} from '@/components/MediaFallback';
 
-// Muted video is allowed to autoplay in every modern browser with no user
-// gesture at all — hovering was never actually required. peterobi.online's
-// cards just always play; this does the same, gated by IntersectionObserver
-// so a page with many cards doesn't decode dozens of videos at once (plays
-// once ~30% of the card is in view, pauses again once it scrolls away —
-// still no hover, no click, just naturally on as you scroll past it).
+// Autoplay is deliberately driven by viewport visibility, never hover.
+// A muted inline video can autoplay without a user gesture, but we only
+// activate it when roughly 30% of its card is visible. This works on both
+// pointer and touch devices because it uses IntersectionObserver rather than
+// mouse events. Once the card drops below the visibility threshold, playback
+// is stopped and the thumbnail is restored.
 function useInView<T extends HTMLElement>(threshold = 0.3) {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
@@ -17,7 +17,16 @@ function useInView<T extends HTMLElement>(threshold = 0.3) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {threshold});
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Do not use isIntersecting alone: that becomes true as soon as even
+        // a single pixel enters the viewport. We specifically want ~30%.
+        setInView(entry.isIntersecting && entry.intersectionRatio >= threshold);
+      },
+      {threshold: [0, threshold]},
+    );
+
     observer.observe(el);
     return () => observer.disconnect();
   }, [threshold]);
@@ -32,10 +41,10 @@ function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string
   if (embed.provider === 'twitter') return twitterVideoSrc ? {kind: 'video', src: twitterVideoSrc} : null;
   if (embed.provider === 'youtube') {
     const id = embed.embedUrl?.split('/').pop();
-    return {kind: 'iframe', src: `${embed.embedUrl}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1`};
+    return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&mute=1&controls=0&loop=1&playlist=' + id + '&modestbranding=1'};
   }
-  if (embed.provider === 'vimeo') return {kind: 'iframe', src: `${embed.embedUrl}?autoplay=1&muted=1&loop=1&background=1`};
-  if (embed.provider === 'tiktok') return {kind: 'iframe', src: `${embed.embedUrl}?autoplay=1&muted=1&controls=0`};
+  if (embed.provider === 'vimeo') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&loop=1&background=1'};
+  if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0'};
   return null;
 }
 
@@ -45,9 +54,8 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
   const isTwitter = embed.provider === 'twitter';
 
-  // Resolve X's real underlying video the first time the card is actually
-  // visible — not on mount, so a whole page of cards doesn't all fire a
-  // lookup before the visitor has scrolled to any of them.
+  // Resolve X's real underlying video only when the card crosses the viewport
+  // threshold. This avoids firing lookups for off-screen cards.
   useEffect(() => {
     if (!isTwitter || !inView || !embed.embedUrl || twitterVideoSrc) return;
     let cancelled = false;
@@ -60,10 +68,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   }, [isTwitter, embed.embedUrl, inView, twitterVideoSrc]);
 
   const playMode = getPlayMode(embed, twitterVideoSrc);
-  // Twitter needs the observed wrapper mounted even before a video resolves —
-  // that's what makes `inView` become true and triggers the lookup above.
-  // Instagram/Facebook/Threads/no-media items never resolve to anything
-  // playable here, so they skip straight to a plain thumbnail.
+  // Twitter needs the observed wrapper mounted before its video URL resolves.
   const observable = playMode !== null || isTwitter;
 
   if (!observable) {
