@@ -9,7 +9,9 @@ function useInView<T extends HTMLElement>(threshold = 0.1) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting && entry.intersectionRatio >= threshold), {threshold: [0, threshold]});
+    const observer = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting && entry.intersectionRatio >= threshold);
+    }, {threshold: [0, threshold]});
     observer.observe(el);
     return () => observer.disconnect();
   }, [threshold]);
@@ -36,9 +38,12 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const [ref, inView] = useInView<HTMLDivElement>();
   const [twitterVideoSrc, setTwitterVideoSrc] = useState<string | null>(null);
   const [twitterFailed, setTwitterFailed] = useState(false);
+  const [twitterRetry, setTwitterRetry] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [iframeReady, setIframeReady] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
   const isTwitter = embed.provider === 'twitter';
 
@@ -46,15 +51,25 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     setVideoReady(false);
     setIframeReady(false);
     setThumbnailFailed(false);
-    if (!isTwitter) return;
     setTwitterVideoSrc(null);
     setTwitterFailed(false);
+    setTwitterRetry(0);
   }, [isTwitter, embed.embedUrl]);
 
   useEffect(() => {
-    if (!isTwitter || !inView || !embed.embedUrl || twitterVideoSrc || twitterFailed) return;
-    setTwitterVideoSrc('/api/x-video/stream?url=' + encodeURIComponent(embed.embedUrl));
-  }, [isTwitter, embed.embedUrl, inView, twitterVideoSrc, twitterFailed]);
+    if (!isTwitter || !inView || !embed.embedUrl) return;
+    setTwitterFailed(false);
+    setTwitterVideoSrc('/api/x-video/stream?url=' + encodeURIComponent(embed.embedUrl) + '&retry=' + twitterRetry);
+  }, [isTwitter, inView, embed.embedUrl, twitterRetry]);
+
+  useEffect(() => {
+    if (!isTwitter || !inView || !twitterFailed) return;
+    if (retryTimer.current) clearTimeout(retryTimer.current);
+    retryTimer.current = setTimeout(() => setTwitterRetry(value => value + 1), 900);
+    return () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    };
+  }, [isTwitter, inView, twitterFailed]);
 
   const playMode = getPlayMode(embed, twitterVideoSrc);
   const observable = playMode !== null || isTwitter;
@@ -88,7 +103,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden">
       <div className={`absolute inset-0 transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`}>{fallback}</div>
-      {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => { setTwitterFailed(isTwitter); setVideoReady(false); }} onCanPlay={() => { setVideoReady(true); if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${activeVideo ? 'opacity-100' : 'opacity-0'}`} />}
+      {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => { if (isTwitter) { setTwitterFailed(true); setVideoReady(false); } }} onCanPlay={() => { setVideoReady(true); if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${activeVideo ? 'opacity-100' : 'opacity-0'}`} />}
       {showIframe && playMode.kind === 'iframe' && <iframe src={playMode.src} className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${activeIframe ? 'opacity-100' : 'opacity-0'}`} allow="autoplay; encrypted-media; picture-in-picture" title={alt} onLoad={() => setIframeReady(true)} />}
     </div>
   );
