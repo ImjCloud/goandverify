@@ -1,4 +1,6 @@
-import {getEmbed} from '@/lib/embed'; 'use client';
+'use client';
+
+import {getEmbed} from '@/lib/embed';
 import {useState} from 'react';
 import Link from 'next/link';
 import {ArrowUpRight,CheckCircle2,AlertTriangle,Clock3,Archive} from 'lucide-react';
@@ -15,35 +17,21 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
     <>
       {/* Desktop / tablet only: expanding-panel rail */}
       <div className="ev-rail hidden md:flex" onMouseLeave={()=>setActive(null)}>
-        {items.map((item,i)=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl).provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||'');
+        {items.map((item,i)=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl)?.provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||'');
           const isActive=active===i;
           const grow=active===null?1:isActive?7:0.55;
           return (
-            <Link
-              key={item.id}
-              href={`/evidence/${item.slug}`}
-              className={`ev-panel ${isActive?'is-active':''}`}
-              aria-label={`View evidence: ${item.title}`}
-              style={{flexGrow:grow}}
-              onMouseEnter={()=>setActive(i)}
-              onFocus={()=>setActive(i)}
-            >
+            <Link key={item.id} href={`/evidence/${item.slug}`} className={`ev-panel ${isActive?'is-active':''}`} aria-label={`View evidence: ${item.title}`} style={{flexGrow:grow}} onMouseEnter={()=>setActive(i)} onFocus={()=>setActive(i)}>
               <div className="ev-panel-media">
-                {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
+                {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl||item.sourceUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
                 <span className="ev-panel-type">{item.type}</span>
-                {!isActive && <span className="ev-panel-vertical editorial-serif">{item.title}</span>}
+                {!isActive&&<span className="ev-panel-vertical editorial-serif">{item.title}</span>}
               </div>
               <div className="ev-panel-summary">
-                <div className="ev-panel-meta">
-                  <span>{item.year} · {item.location}</span>
-                  <span className="inline-flex items-center gap-1">{icon(item.verification)} {item.verification}</span>
-                </div>
+                <div className="ev-panel-meta"><span>{item.year} · {item.location}</span><span className="inline-flex items-center gap-1">{icon(item.verification)} {item.verification}</span></div>
                 <h3 className="editorial-serif ev-panel-title">{item.title}</h3>
                 <p className="ev-panel-desc">{item.description}</p>
-                <div className="ev-panel-source">
-                  <span>{item.author}</span>
-                  <span className="font-semibold">Source: {item.source}</span>
-                </div>
+                <div className="ev-panel-source"><span>{item.author}</span><span className="font-semibold">Source: {item.source}</span></div>
                 <span className="ev-panel-cta">View evidence <ArrowUpRight size={14}/></span>
               </div>
             </Link>
@@ -53,21 +41,13 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
 
       {/* Mobile only: swipeable snap carousel */}
       <div className="ev-mobile-rail flex md:hidden">
-        {items.map(item=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl).provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||''); return (
+        {items.map(item=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl)?.provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||''); return (
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
-              {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:item.image?<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>:<MediaFallback className="h-full w-full object-cover"/>}
+              {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl||item.sourceUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:item.image?<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>:<MediaFallback className="h-full w-full object-cover"/>}
               <div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{item.type}</div>
             </div>
-            <div className="p-5">
-              <div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]">
-                <span>{item.year} · {item.location}</span>
-                <span className="inline-flex items-center gap-1">{icon(item.verification)} {item.verification}</span>
-              </div>
-              <h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
-              <span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View evidence <ArrowUpRight size={14}/></span>
-            </div>
+            <div className="p-5"><div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]"><span>{item.year} · {item.location}</span><span className="inline-flex items-center gap-1">{icon(item.verification)} {item.verification}</span></div><h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3><p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View evidence <ArrowUpRight size={14}/></span></div>
           </Link>
         )})}
       </div>
