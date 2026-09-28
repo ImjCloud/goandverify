@@ -29,6 +29,8 @@ create table if not exists political_affiliations (
  party_id uuid not null references political_parties(id), role text, start_date date, end_date date,
  source_url text, verified_at timestamptz, created_at timestamptz not null default now()
 );
+create index if not exists political_affiliations_person_id_idx on political_affiliations(person_id);
+create index if not exists political_affiliations_party_id_idx on political_affiliations(party_id);
 
 create table if not exists evidence (
  id uuid primary key default gen_random_uuid(), slug text unique not null, title text not null,
@@ -43,6 +45,8 @@ create table if not exists evidence (
 create table if not exists evidence_people (evidence_id uuid references evidence(id) on delete cascade, person_id uuid references people(id) on delete cascade, primary key(evidence_id, person_id));
 create table if not exists tags (id uuid primary key default gen_random_uuid(), name text unique not null);
 create table if not exists evidence_tags (evidence_id uuid references evidence(id) on delete cascade, tag_id uuid references tags(id) on delete cascade, primary key(evidence_id, tag_id));
+create index if not exists evidence_people_person_id_idx on evidence_people(person_id);
+create index if not exists evidence_tags_tag_id_idx on evidence_tags(tag_id);
 
 create table if not exists submissions (
  id uuid primary key default gen_random_uuid(), evidence_id uuid references evidence(id) on delete set null,
@@ -53,6 +57,7 @@ create table if not exists submissions (
  status submission_status not null default 'pending_review', reviewer_notes text, reviewed_by uuid, reviewed_at timestamptz,
  created_at timestamptz not null default now()
 );
+create index if not exists submissions_evidence_id_idx on submissions(evidence_id);
 
 create table if not exists audit_logs (
  id uuid primary key default gen_random_uuid(), actor_id uuid, action text not null, entity_type text not null,
@@ -151,6 +156,7 @@ create table if not exists flags (
  status flag_status not null default 'open', resolved_by uuid, resolved_at timestamptz, resolution_notes text,
  created_at timestamptz not null default now()
 );
+create index if not exists flags_evidence_id_idx on flags(evidence_id);
 
 -- ---------------------------------------------------------------------------
 -- DB-backed rate limiting. A fixed-window counter keyed by e.g. "submit:1.2.3.4".
