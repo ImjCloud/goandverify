@@ -1,12 +1,23 @@
+'use client';
+
 import Link from 'next/link';
+import {usePathname} from 'next/navigation';
 import {ArrowUpRight, Megaphone} from 'lucide-react';
 import type {ApprovedAd} from '@/lib/ads';
 import {AdvertCarousel} from '@/components/AdvertCarousel';
 
 export function AdvertiseBanner({ads = []}: {ads?: ApprovedAd[]}) {
+  const pathname = usePathname();
+
+  // The public advert rail is intentionally not rendered inside the
+  // moderation console. The admin page has its own Adverts tab with
+  // approval, pause/resume, cancellation and analytics controls.
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return null;
+
   if (ads.length > 0) {
     return <AdvertCarousel ads={ads}/>;
   }
+
   return (
     <section className="ad-banner border-y border-white/10 px-5 py-10" aria-label="Advertising opportunities">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface-2)] p-6 md:flex-row md:items-center md:justify-between md:p-8">
