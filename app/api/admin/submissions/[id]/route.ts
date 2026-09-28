@@ -86,6 +86,20 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
   const {data: submission, error: fetchError} = await admin.from('submissions').select('*').eq('id', id).single();
   if (fetchError || !submission) return NextResponse.json({error: 'Submission not found.'}, {status: 404});
 
+
+  if (body.action === 'archive') {
+    if (!submission.evidence_id) {
+      return NextResponse.json({error: 'This submission has no published evidence record to archive.'}, {status: 400});
+    }
+    const {error: archiveError} = await admin
+      .from('evidence')
+      .update({verification_status: 'archived'})
+      .eq('id', submission.evidence_id);
+    if (archiveError) return NextResponse.json({error: archiveError.message}, {status: 500});
+    await logAudit('evidence_archived', 'submission', id, {evidenceId: submission.evidence_id});
+    return NextResponse.json({ok: true});
+  }
+
   if (body.status === 'approved') {
     const verificationUi: string = body.verification || 'User Submitted';
     const verificationDb = UI_TO_DB_VERIFICATION[verificationUi] || 'submitted';
@@ -174,5 +188,31 @@ export async function PATCH(req: NextRequest, {params}: {params: Promise<{id: st
   if (error) return NextResponse.json({error: error.message}, {status: 500});
 
   await logAudit(`submission_${dbStatus}`, 'submission', id, {notes: body.notes ?? null});
+  return NextResponse.json({ok: true});
+}
+
+
+export async function DELETE(req: NextRequest, {params}: {params: Promise<{id: string}>}) {
+  if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
+  if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
+
+  const {id} = await params;
+  const admin = supabaseAdmin();
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads';
+  const {data: submission, error: fetchError} = await admin.from('submissions').select('*').eq('id', id).single();
+  if (fetchError || !submission) return NextResponse.json({error: 'Submission not found.'}, {status: 404});
+
+  if (submission.evidence_id) {
+    const {error: evidenceError} = await admin.from('evidence').delete().eq('id', submission.evidence_id);
+    if (evidenceError) return NextResponse.json({error: evidenceError.message}, {status: 500});
+  }
+
+  if (submission.media_path) {
+    await admin.storage.from(bucket).remove([submission.media_path]);
+  }
+  const {error: deleteError} = await admin.from('submissions').delete().eq('id', id);
+  if (deleteError) return NextResponse.json({error: deleteError.message}, {status: 500});
+
+  await logAudit('submission_deleted', 'submission', id, {evidenceId: submission.evidence_id ?? null});
   return NextResponse.json({ok: true});
 }
