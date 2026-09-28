@@ -266,6 +266,28 @@ export default function Admin() {
     }
   }
 
+  async function manageSubmission(id: string, action: 'archive' | 'delete') {
+    const message = action === 'delete'
+      ? 'Delete this submission and its published evidence permanently? This cannot be undone.'
+      : 'Archive this published evidence? It will remain in the database but will no longer be treated as current verified evidence.';
+    if (!window.confirm(message)) return;
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}`, {
+        method: action === 'delete' ? 'DELETE' : 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: action === 'archive' ? JSON.stringify({action: 'archive'}) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Could not ${action} submission.`);
+      await loadSubmissions();
+    } catch (e: any) {
+      setLoadError(e.message || `Could not ${action} submission.`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function act(id: string, status: 'approved' | 'rejected' | 'needs_more_information') {
     setBusyId(id);
     try {
@@ -455,6 +477,24 @@ export default function Admin() {
                     >
                       Reject
                     </button>
+                    {r.status === 'approved' && (
+                      <>
+                        <button
+                          disabled={busyId === r.id}
+                          onClick={() => manageSubmission(r.id, 'archive')}
+                          className="rounded-full border border-amber-700/50 px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-40"
+                        >
+                          Archive
+                        </button>
+                        <button
+                          disabled={busyId === r.id}
+                          onClick={() => manageSubmission(r.id, 'delete')}
+                          className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
