@@ -133,10 +133,15 @@ export default function Admin() {
 
   async function loadAds() {
     setAdsLoading(true);
+    setAdActionError(null);
     try {
-      const res = await fetch('/api/admin/ads');
-      const data = await res.json();
-      if (res.ok) setAds(data.ads ?? []);
+      const res = await fetch('/api/admin/ads', {cache: 'no-store'});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not load advert analytics.');
+      setAds(data.ads ?? []);
+    } catch (error: any) {
+      setAds([]);
+      setAdActionError(error?.message || 'Could not load advert analytics.');
     } finally {
       setAdsLoading(false);
     }
