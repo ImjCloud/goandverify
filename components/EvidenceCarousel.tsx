@@ -52,7 +52,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
       </div>
 
       {/* Mobile only: swipeable snap carousel */}
-      <div className="ev-mobile-rail flex md:hidden>
+      <div className="ev-mobile-rail flex md:hidden">
         {items.map(item=>(
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
