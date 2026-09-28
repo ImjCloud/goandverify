@@ -13,8 +13,8 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
 
   return (
     <>
-      {/* Desktop / tablet: expanding-panel rail */}
-      <div className="ev-rail hidden md:flex" onMouseLeave={()=>setActive(null)}>
+      {/* Desktop / tablet only: expanding-panel rail */}
+      <div className="ev-rail hidden md:flex onMouseLeave={()=>setActive(null)}>
         {items.map((item,i)=>{
           const isActive=active===i;
           const grow=active===null?1:isActive?7:0.55;
@@ -51,8 +51,8 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
         })}
       </div>
 
-      {/* Mobile: swipeable snap carousel */}
-      <div className="ev-mobile-rail flex md:hidden">
+      {/* Mobile only: swipeable snap carousel */}
+      <div className="ev-mobile-rail flex md:hidden>
         {items.map(item=>(
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
