@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 180"><rect width="500" height="180" rx="20" fill="#111"/><text x="250" y="80" fill="#fff" font-family="Arial" font-size="48" font-weight="700" text-anchor="middle">NDC</text><text x="250" y="125" fill="#c9ad72" font-family="Arial" font-size="17" text-anchor="middle">PARTY LOGO PLACEHOLDER</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 191 148" role="img" aria-labelledby="title desc">
+  <title id="title">Nigeria Democratic Congress (NDC) logo</title>
+  <desc id="desc">Official NDC logo supplied for the Go and Verify project.</desc>
+  <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAL8AAACUCAYAAAD7jQmFAAAAAXNSR0IArs4c6QAA..." x="0" y="0" width="191" height="148" preserveAspectRatio="xMidYMid meet"/>
+</svg>
