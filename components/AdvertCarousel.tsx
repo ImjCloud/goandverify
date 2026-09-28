@@ -13,41 +13,165 @@ export function AdvertCarousel({ads}: {ads: ApprovedAd[]}) {
 
   useEffect(() => {
     if (paused || visibleAds.length < 2) return;
-    const timer = window.setInterval(() => setIndex(value => (value + 1) % visibleAds.length), 7000);
+    const timer = window.setInterval(() => {
+      setIndex(value => (value + 1) % visibleAds.length);
+    }, 7000);
     return () => window.clearInterval(timer);
   }, [paused, visibleAds.length]);
 
   useEffect(() => {
     if (!current) return;
-    void fetch('/api/ads/events', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({adId: current.id, eventType: 'impression'})});
+    void fetch('/api/ads/events', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({adId: current.id, eventType: 'impression'}),
+    });
   }, [current?.id]);
 
   if (!current) return null;
+
   const previous = () => setIndex(value => (value - 1 + visibleAds.length) % visibleAds.length);
   const next = () => setIndex(value => (value + 1) % visibleAds.length);
 
+  const trackClick = () => {
+    const body = JSON.stringify({adId: current.id, eventType: 'click'});
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/ads/events', new Blob([body], {type: 'application/json'}));
+    } else {
+      void fetch('/api/ads/events', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body,
+        keepalive: true,
+      });
+    }
+  };
+
   return (
-    <section className="ad-banner border-y border-white/10 px-5 py-8" aria-label="Community adverts" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+    <section
+      className="ad-banner border-y border-white/10 px-5 py-8"
+      aria-label="Community adverts"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="mx-auto max-w-5xl">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-[.24em] text-[var(--accent)]">Featured community adverts</p>
-            <span className="hidden text-[10px] text-[var(--muted)] sm:inline">Moving right to left</span>
+            <p className="text-[10px] font-bold uppercase tracking-[.24em] text-[var(--accent)]">
+              Featured community adverts
+            </p>
+            <span className="hidden text-[10px] text-[var(--muted)] sm:inline">
+              Moving right to left
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <p className="text-xs text-[var(--muted)]" aria-live="polite">{index + 1} of {visibleAds.length}</p>
-            <Link href="/advertise" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/50 bg-[var(--surface-2)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-[#15130f]">
-              <Plus size={13}/> Advertise here
+            <p className="text-xs text-[var(--muted)]" aria-live="polite">
+              {index + 1} of {visibleAds.length}
+            </p>
+            <Link
+              href="/advertise"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/50 bg-[var(--surface-2)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-[#15130f]"
+            >
+              <Plus size={13} /> Advertise here
             </Link>
           </div>
         </div>
-        <div className="overflow-hidden rounded-2xl" aria-live="polite"><div key={current.id} className="ad-flashcard-enter"><a href={current.target_url} target="_blank" rel="noreferrer" onClick={() => {const body=JSON.stringify({adId: current.id, eventType: 'click'}); if (navigator.sendBeacon) {navigator.sendBeacon('/api/ads/events', new Blob([body], {type: 'application/json'}));} else {void fetch('/api/ads/events', {method: 'POST', headers: {'Content-Type': 'application/json'}, body, keepalive: true});}}} className="ad-flashcard group block overflow-hidden rounded-2xl border border-white/10 bg-[var(--surface-2)]">
-          {current.media_type === 'video' && current.media_url ? <video src={current.media_url} poster={current.image_url ?? undefined} muted autoPlay loop playsInline className="max-h-[360px] w-full bg-black object-cover" /> : (current.media_url || current.image_url) ? <img src={current.media_url || current.image_url || ''} alt="" className="max-h-[360px] w-full object-cover" /> : <div className="flex min-h-48 items-center justify-center bg-[var(--surface)] px-6 text-center"><div><ExternalLink className="mx-auto text-[var(--accent)]" size={28}/><p className="mt-3 text-sm font-bold">Open this featured link</p></div></div>}
-          <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-7"><div><h2 className="editorial-serif text-3xl md:text-4xl">{current.title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">{current.description}</p><p className="mt-3 text-xs font-bold text-[var(--accent)]">{current.advertiser_name}</p></div><span className="inline-flex shrink-0 items-center gap-2 text-xs font-bold">Visit advert <ExternalLink size={14}/></span></div>
-        </a></div>
-        {visibleAds.length > 1 && <div className="mt-4 flex items-center justify-between"><div className="flex gap-1.5" aria-label="Choose advert"><span className="sr-only">Choose advert</span>{visibleAds.map((ad, adIndex) => <button key={ad.id} aria-label={`Show advert ${adIndex + 1}`} aria-current={adIndex === index} onClick={() => setIndex(adIndex)} className={`ad-dot ${adIndex === index ? 'is-active' : ''}`} />)}</div><div className="flex items-center gap-2"><button onClick={previous} aria-label="Previous advert" className="ad-control"><ArrowLeft size={16}/></button><button onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play adverts' : 'Pause adverts'} className="ad-control">{paused ? <Play size={16}/> : <Pause size={16}/>}</button><button onClick={next} aria-label="Next advert" className="ad-control"><ArrowRight size={16}/></button></div></div>}
+
+        <div className="overflow-hidden rounded-2xl" aria-live="polite">
+          <div key={current.id} className="ad-flashcard-enter">
+            <a
+              href={current.target_url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={trackClick}
+              className="ad-flashcard group block overflow-hidden rounded-2xl border border-white/10 bg-[var(--surface-2)]"
+            >
+              {current.media_type === 'video' && current.media_url ? (
+                <video
+                  src={current.media_url}
+                  poster={current.image_url ?? undefined}
+                  muted
+                  autoPlay
+                  loop
+                  playsInline
+                  className="max-h-[360px] w-full bg-black object-cover"
+                />
+              ) : current.media_url || current.image_url ? (
+                <img
+                  src={current.media_url || current.image_url || ''}
+                  alt=""
+                  className="max-h-[360px] w-full object-cover"
+                />
+              ) : (
+                <div className="flex min-h-48 items-center justify-center bg-[var(--surface)] px-6 text-center">
+                  <div>
+                    <ExternalLink className="mx-auto text-[var(--accent)]" size={28} />
+                    <p className="mt-3 text-sm font-bold">Open this featured link</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-7">
+                <div>
+                  <h2 className="editorial-serif text-3xl md:text-4xl">{current.title}</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                    {current.description}
+                  </p>
+                  <p className="mt-3 text-xs font-bold text-[var(--accent)]">
+                    {current.advertiser_name}
+                  </p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-2 text-xs font-bold">
+                  Visit advert <ExternalLink size={14} />
+                </span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        {visibleAds.length > 1 && (
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex gap-1.5" aria-label="Choose advert">
+              <span className="sr-only">Choose advert</span>
+              {visibleAds.map((ad, adIndex) => (
+                <button
+                  key={ad.id}
+                  aria-label={'Show advert ' + (adIndex + 1)}
+                  aria-current={adIndex === index}
+                  onClick={() => setIndex(adIndex)}
+                  className={'ad-dot ' + (adIndex === index ? 'is-active' : '')}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={previous} aria-label="Previous advert" className="ad-control">
+                <ArrowLeft size={16} />
+              </button>
+              <button
+                onClick={() => setPaused(value => !value)}
+                aria-label={paused ? 'Play adverts' : 'Pause adverts'}
+                className="ad-control"
+              >
+                {paused ? <Play size={16} /> : <Pause size={16} />}
+              </button>
+              <button onClick={next} aria-label="Next advert" className="ad-control">
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-        <div className="mt-5 flex justify-end"><Link href="/advertise" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[var(--accent)]">Place another advert <Plus size={14}/></Link></div>
+
+      <div className="mt-5 flex justify-end">
+        <Link
+          href="/advertise"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[var(--accent)]"
+        >
+          Place another advert <Plus size={14} />
+        </Link>
+      </div>
     </section>
   );
 }
