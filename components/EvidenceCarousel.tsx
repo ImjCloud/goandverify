@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect,useState} from 'react';
+import type {MouseEvent} from 'react';
 import {getEmbed} from '@/lib/embed';
 import Link from 'next/link';
 import {ArrowRight,ArrowUpRight,CheckCircle2,AlertTriangle,Clock3,Archive} from 'lucide-react';
@@ -18,7 +19,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
  useEffect(()=>{if(page>=pageCount)setPage(0)},[page,pageCount]);
  useEffect(()=>{setActive(null);setEdgeLock(false)},[page]);
  const nextPage=()=>{if(edgeLock||pageCount<2)return;setEdgeLock(true);setPage(v=>(v+1)%pageCount);window.setTimeout(()=>setEdgeLock(false),900)};
- const handleMove=(e:React.MouseEvent<HTMLDivElement>)=>{if(active!==visible.length-1||pageCount<2||edgeLock)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX-r.left>r.width*.82)nextPage()};
+ const handleMove=(e:MouseEvent<HTMLDivElement>)=>{if(active!==visible.length-1||pageCount<2||edgeLock)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX-r.left>r.width*.82)nextPage()};
  return <>
   <div className="hidden md:block" onMouseMove={handleMove}>
    <div className="ev-rail" onMouseLeave={()=>setActive(null)}>
