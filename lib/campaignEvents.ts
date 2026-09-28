@@ -11,6 +11,7 @@ export type CampaignEvent = {
   image_url: string | null;
   href: string | null;
   created_at: string;
+  status: 'approved';
 };
 
 export async function getCampaignEvents(limit = 6): Promise<CampaignEvent[]> {
@@ -18,12 +19,13 @@ export async function getCampaignEvents(limit = 6): Promise<CampaignEvent[]> {
   try {
     const {data, error} = await supabasePublic()
       .from('campaign_events')
-      .select('id,title,description,event_date,location,media_type,media_url,image_url,href,created_at')
+      .select('id,title,description,event_date,location,media_type,media_url,image_url,href,created_at,status')
+      .eq('status', 'approved')
       .order('event_date', {ascending: false, nullsFirst: false})
       .order('created_at', {ascending: false})
       .limit(limit);
     if (error || !data) return [];
-    return data;
+    return data as CampaignEvent[];
   } catch {
     return [];
   }
