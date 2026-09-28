@@ -2,7 +2,7 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
-import {ArrowLeft, Check, Clock3, ExternalLink, FileImage, FileVideo, Loader2, Search, X} from 'lucide-react';
+import {ArrowLeft, Check, Clock3, ExternalLink, FileVideo, Loader2, Search, X} from 'lucide-react';
 
 type CampaignSubmission = {
   id: string;
@@ -146,7 +146,7 @@ export default function CampaignReview() {
       {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin" size={28}/></div> : filtered.length === 0 ? <div className="mt-8 border border-white/10 p-10 text-center text-[var(--muted)]">No campaign submissions match this view.</div> : (
         <div className="mt-8 grid gap-6">
           {filtered.map(row => {
-            const isVideo = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(row.media_url ?? '') || !!row.media_path && row.thumbnailUrl !== row.mediaUrl;
+            const isVideo = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(row.media_url ?? '') || (!!row.media_path && row.thumbnailUrl !== row.mediaUrl);
             return (
               <article key={row.id} className="overflow-hidden border border-white/10 bg-[var(--surface)]">
                 <div className="grid lg:grid-cols-[minmax(280px,420px)_1fr]">
