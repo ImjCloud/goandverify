@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   const {data, error} = await admin
     .from('campaign_events')
-    .insert({title, description, event_date: eventDate, location, media_type: mediaType, media_url: mediaUrl, media_path: mediaPath, image_url: storedThumbnail, href})
+    .insert({title, description, event_date: eventDate, location, media_type: mediaType, media_url: mediaUrl, media_path: mediaPath, image_url: storedThumbnail, href, status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: 'admin'})
     .select('id')
     .single();
 
@@ -111,6 +111,6 @@ export async function POST(req: NextRequest) {
     if (mediaPath) await admin.storage.from(bucket).remove([mediaPath]);
     return NextResponse.json({error: error.message}, {status: 500});
   }
-  await logAudit('campaign_event_created', 'campaign_event', data.id, {title, mediaType});
+  await logAudit('campaign_event_created', 'campaign_event', data.id, {title, mediaType, status: 'approved'});
   return NextResponse.json({ok: true, id: data.id});
 }
