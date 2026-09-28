@@ -39,10 +39,11 @@ export async function PATCH(req: NextRequest) {
     const {data: current, error: fetchError} = await admin.from('ad_requests').select('*').eq('id', id).single();
     if (fetchError || !current) return NextResponse.json({error: 'Advert not found.'}, {status: 404});
     const patch: Record<string, unknown> = {};
-    for (const key of ['advertiser_name','contact_email','contact_whatsapp','title','description','media_url','image_url','target_url','start_date','end_date']) {
+    for (const key of ['advertiser_name','contact_email','contact_whatsapp','title','description','media_type','media_url','image_url','target_url','placement','start_date','end_date']) {
       if (body[key] !== undefined) patch[key] = body[key] === '' ? null : body[key];
     }
     if (patch.title !== undefined && !String(patch.title).trim()) return NextResponse.json({error: 'Advert title is required.'}, {status: 400});
+    if (patch.media_type !== undefined && !['image','video','link'].includes(String(patch.media_type))) return NextResponse.json({error: 'Invalid media type.'}, {status: 400});
     if (patch.target_url !== undefined && patch.target_url) {
       try { const u = new URL(String(patch.target_url)); if (!['http:','https:'].includes(u.protocol)) throw new Error(); } catch { return NextResponse.json({error: 'Destination URL must be a valid http/https URL.'}, {status: 400}); }
     }
