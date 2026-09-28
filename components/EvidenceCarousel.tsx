@@ -1,4 +1,4 @@
-'use client';
+import {getEmbed} from '@/lib/embed'; 'use client';
 import {useState} from 'react';
 import Link from 'next/link';
 import {ArrowUpRight,CheckCircle2,AlertTriangle,Clock3,Archive} from 'lucide-react';
@@ -15,7 +15,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
     <>
       {/* Desktop / tablet only: expanding-panel rail */}
       <div className="ev-rail hidden md:flex" onMouseLeave={()=>setActive(null)}>
-        {items.map((item,i)=>{
+        {items.map((item,i)=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl).provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||'');
           const isActive=active===i;
           const grow=active===null?1:isActive?7:0.55;
           return (
@@ -29,7 +29,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
               onFocus={()=>setActive(i)}
             >
               <div className="ev-panel-media">
-                {item.type==='video'?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
+                {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="ev-panel-img"/>:item.image?<img src={item.image} alt={item.title} className="ev-panel-img"/>:<MediaFallback className="ev-panel-img"/>}
                 <span className="ev-panel-type">{item.type}</span>
                 {!isActive && <span className="ev-panel-vertical editorial-serif">{item.title}</span>}
               </div>
@@ -53,10 +53,10 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
 
       {/* Mobile only: swipeable snap carousel */}
       <div className="ev-mobile-rail flex md:hidden">
-        {items.map(item=>(
+        {items.map(item=>{ const mediaProvider=getEmbed(item.mediaUrl||item.sourceUrl).provider; const isPlayableMedia=item.type==='video'||['youtube','vimeo','tiktok','twitter','instagram','facebook'].includes(mediaProvider||''); return (
           <Link key={item.id} href={`/evidence/${item.slug}`} className="ev-mobile-card">
             <div className="relative aspect-[4/3] overflow-hidden bg-black">
-              {item.type==='video'?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:item.image?<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>:<MediaFallback className="h-full w-full object-cover"/>}
+              {isPlayableMedia?<AutoplayMedia mediaUrl={item.mediaUrl} thumbnail={item.image} alt={item.title} imgClassName="h-full w-full object-cover"/>:item.image?<img src={item.image} alt={item.title} className="h-full w-full object-cover"/>:<MediaFallback className="h-full w-full object-cover"/>}
               <div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{item.type}</div>
             </div>
             <div className="p-5">
@@ -69,7 +69,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
               <span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View evidence <ArrowUpRight size={14}/></span>
             </div>
           </Link>
-        ))}
+        )})}
       </div>
     </>
   );
