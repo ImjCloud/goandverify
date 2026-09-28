@@ -5,7 +5,7 @@ export type GalleryItem = {src:string; alt:string; caption:string};
 export type TimelineEntry = {year:string;title:string;text:string;source?:string;sourceUrl?:string};
 export type Person = {slug:string;name:string;role:string;party:string;bio:string;image:string;gallery:GalleryItem[];timeline:TimelineEntry[]};
 
-export const party={name:'Nigeria Democratic Congress',short:'NDC',logo:'/ndc-logo-official.svg'};
+export const party={name:'Nigeria Democratic Congress',short:'NDC',logo:'/ndc-logo.svg'};
 export const people:Person[]=[
  {slug:'peter-obi',name:'Peter Gregory Obi',role:'Presidential Candidate — 2027',party:party.name,bio:'Nigerian businessman and politician, born in Onitsha in 1961. He served two terms as Governor of Anambra State (2006–2014) and placed third in the 2023 presidential election with over six million votes. He now leads the Nigeria Democratic Congress ticket for the 2027 election, running alongside Rabiu Kwankwaso.',image:'/peter-obi.svg',
   gallery:[
