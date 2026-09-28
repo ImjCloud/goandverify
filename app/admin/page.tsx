@@ -1,5 +1,6 @@
 'use client';
 import {useEffect, useMemo, useState} from 'react';
+import {useSearchParams} from 'next/navigation';
 import Link from 'next/link';
 import {ShieldCheck, Search, Check, X, Clock3, FileText, Lock, Loader2, AlertTriangle, Link as LinkIcon, Flag} from 'lucide-react';
 
@@ -73,6 +74,8 @@ type AdRequest = {
 };
 
 export default function Admin() {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const [authed, setAuthed] = useState<boolean | null>(null); // null = checking
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -229,6 +232,12 @@ export default function Admin() {
   useEffect(() => {
     loadSubmissions();
   }, []);
+
+  useEffect(() => {
+    if (requestedTab === 'events' || requestedTab === 'flags' || requestedTab === 'adverts' || requestedTab === 'submissions') {
+      setTab(requestedTab);
+    }
+  }, [requestedTab]);
 
   useEffect(() => {
     if (tab === 'flags' && flags.length === 0) loadFlags();
