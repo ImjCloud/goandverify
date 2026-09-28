@@ -119,13 +119,18 @@ export default function Admin() {
 
   async function actOnFlag(id: string, status: 'resolved' | 'dismissed') {
     setFlagBusyId(id);
+    setLoadError(null);
     try {
-      await fetch(`/api/admin/flags/${id}`, {
+      const res = await fetch(`/api/admin/flags/${id}`, {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({status}),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not update this report.');
       await loadFlags();
+    } catch (error: any) {
+      setLoadError(error?.message || 'Could not update this report.');
     } finally {
       setFlagBusyId(null);
     }
@@ -182,9 +187,14 @@ export default function Admin() {
 
   async function toggleAd(id: string, paused: boolean) {
     setAdBusyId(id);
+    setAdActionError(null);
     try {
       const res = await fetch('/api/admin/ads', {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, action: paused ? 'resume' : 'pause'})});
-      if (res.ok) await loadAds();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not update this advert.');
+      await loadAds();
+    } catch (error: any) {
+      setAdActionError(error?.message || 'Could not update this advert.');
     } finally {
       setAdBusyId(null);
     }
@@ -221,10 +231,16 @@ export default function Admin() {
   }
 
   async function deleteEvent(id: string) {
+    if (!window.confirm('Delete this campaign update permanently?')) return;
     setEventBusyId(id);
+    setEventError(null);
     try {
       const res = await fetch(`/api/admin/campaign-events/${id}`, {method: 'DELETE'});
-      if (res.ok) setEvents(prev => prev.filter(e => e.id !== id));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not delete the campaign update.');
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } catch (error: any) {
+      setEventError(error?.message || 'Could not delete the campaign update.');
     } finally {
       setEventBusyId(null);
     }
