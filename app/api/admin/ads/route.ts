@@ -21,25 +21,52 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  // Advert moderation is part of the normal authenticated admin workflow.
-  // Superadmin infrastructure remains available for future higher-risk operations.
   if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
   if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
   const body = await req.json().catch(() => ({}));
   const id = typeof body.id === 'string' ? body.id : '';
-  const status = body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : '';
-  const pause = body.action === 'pause' || body.action === 'resume';
-  if (!id || (!status && !pause)) return NextResponse.json({error: 'Invalid advert action.'}, {status: 400});
-
+  if (!id) return NextResponse.json({error: 'Advert id is required.'}, {status: 400});
   const admin = supabaseAdmin();
-  const update = pause ? {paused_at: body.action === 'pause' ? new Date().toISOString() : null, updated_at: new Date().toISOString()} : {status, reviewer_notes: typeof body.notes === 'string' ? body.notes : null, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString()};
+
+  if (body.action === 'pause' || body.action === 'resume') {
+    const {error} = await admin.from('ad_requests').update({paused_at: body.action === 'pause' ? new Date().toISOString() : null, updated_at: new Date().toISOString()}).eq('id', id);
+    if (error) return NextResponse.json({error: error.message}, {status: 500});
+    await logAudit(`advert_${body.action}`, 'ad_request', id, {});
+    return NextResponse.json({ok: true});
+  }
+
+  if (body.action === 'edit') {
+    const {data: current, error: fetchError} = await admin.from('ad_requests').select('*').eq('id', id).single();
+    if (fetchError || !current) return NextResponse.json({error: 'Advert not found.'}, {status: 404});
+    const patch: Record<string, unknown> = {};
+    for (const key of ['advertiser_name','contact_email','contact_whatsapp','title','description','media_url','image_url','target_url','start_date','end_date']) {
+      if (body[key] !== undefined) patch[key] = body[key] === '' ? null : body[key];
+    }
+    if (patch.title !== undefined && !String(patch.title).trim()) return NextResponse.json({error: 'Advert title is required.'}, {status: 400});
+    if (patch.target_url !== undefined && patch.target_url) {
+      try { const u = new URL(String(patch.target_url)); if (!['http:','https:'].includes(u.protocol)) throw new Error(); } catch { return NextResponse.json({error: 'Destination URL must be a valid http/https URL.'}, {status: 400}); }
+    }
+    if (patch.media_url !== undefined && patch.media_url) {
+      try { const u = new URL(String(patch.media_url)); if (!['http:','https:'].includes(u.protocol)) throw new Error(); } catch { return NextResponse.json({error: 'Media URL must be a valid http/https URL.'}, {status: 400}); }
+    }
+    if (patch.image_url !== undefined && patch.image_url) {
+      try { const u = new URL(String(patch.image_url)); if (!['http:','https:'].includes(u.protocol)) throw new Error(); } catch { return NextResponse.json({error: 'Image URL must be a valid http/https URL.'}, {status: 400}); }
+    }
+    const {data, error} = await admin.from('ad_requests').update({...patch, updated_at: new Date().toISOString()}).eq('id', id).select('*').single();
+    if (error) return NextResponse.json({error: error.message}, {status: 500});
+    await logAudit('advert_updated', 'ad_request', id, {fields: Object.keys(patch)});
+    return NextResponse.json({ok: true, ad: data});
+  }
+
+  const status = body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : '';
+  if (!status) return NextResponse.json({error: 'Invalid advert action.'}, {status: 400});
+  const update = {status, reviewer_notes: typeof body.notes === 'string' ? body.notes : null, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString()};
   const {data: ad, error} = await admin.from('ad_requests').update(update).eq('id', id).select('title,description,target_url').single();
   if (error) return NextResponse.json({error: error.message}, {status: 500});
   if (status === 'approved' && ad) await admin.from('activity_events').insert({event_type: 'advert_published', title: ad.title, description: ad.description, href: ad.target_url});
-  await logAudit(`advert_${pause ? body.action : status}`, 'ad_request', id, {status, action: body.action});
+  await logAudit(`advert_${status}`, 'ad_request', id, {status});
   return NextResponse.json({ok: true});
 }
-
 
 export async function DELETE(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
@@ -47,17 +74,12 @@ export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const id = typeof body.id === 'string' ? body.id : '';
   if (!id) return NextResponse.json({error: 'Advert id is required.'}, {status: 400});
-
   const admin = supabaseAdmin();
   const {data: ad, error: fetchError} = await admin.from('ad_requests').select('id,title,media_path').eq('id', id).single();
   if (fetchError || !ad) return NextResponse.json({error: 'Advert not found.'}, {status: 404});
-
   const {error: deleteError} = await admin.from('ad_requests').delete().eq('id', id);
   if (deleteError) return NextResponse.json({error: deleteError.message}, {status: 500});
-
-  if (ad.media_path) {
-    await admin.storage.from(process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads').remove([ad.media_path]);
-  }
+  if (ad.media_path) await admin.storage.from(process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads').remove([ad.media_path]);
   await logAudit('advert_cancelled', 'ad_request', id, {title: ad.title});
   return NextResponse.json({ok: true});
 }
