@@ -45,6 +45,7 @@ function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string
   }
   if (embed.provider === 'vimeo') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&loop=1&background=1&playsinline=1'};
   if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0&playsinline=1'};
+  if (embed.provider === 'facebook') return {kind: 'iframe', src: embed.embedUrl + '&autoplay=true'};
   // Instagram's official embed is iframe-based. Mount it when the card is
   // visible and request muted autoplay; Instagram may still ignore autoplay
   // for embedded posts/reels, but the official playable embed remains visible.
@@ -111,7 +112,11 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
+          autoPlay
+          onLoadedMetadata={() => {
+            if (inView) void videoRef.current?.play().catch(() => undefined);
+          }}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0'}`}
         />
       )}
