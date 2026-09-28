@@ -36,14 +36,21 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const [ref, inView] = useInView<HTMLDivElement>();
   const [twitterVideoSrc, setTwitterVideoSrc] = useState<string | null>(null);
   const [twitterFailed, setTwitterFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [iframeReady, setIframeReady] = useState(false);
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
   const isTwitter = embed.provider === 'twitter';
 
   useEffect(() => {
+    setVideoReady(false);
+    setIframeReady(false);
+    if (!isTwitter) return;
+    setTwitterVideoSrc(null);
+    setTwitterFailed(false);
+  }, [isTwitter, embed.embedUrl]);
+
+  useEffect(() => {
     if (!isTwitter || !inView || !embed.embedUrl || twitterVideoSrc || twitterFailed) return;
-    // Use a same-origin streaming endpoint. This avoids browser CORS/referrer
-    // restrictions against video.twimg.com while preserving native <video>
-    // autoplay, range requests, seeking, and buffering.
     setTwitterVideoSrc('/api/x-video/stream?url=' + encodeURIComponent(embed.embedUrl));
   }, [isTwitter, embed.embedUrl, inView, twitterVideoSrc, twitterFailed]);
 
@@ -60,20 +67,25 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
       void video.play().catch(() => undefined);
     } else {
       video.pause();
+      setVideoReady(false);
     }
   }, [inView, playMode?.kind, playMode?.src]);
 
-  if (!observable) return thumbnail ? <img src={thumbnail} alt={alt} className={imgClassName} /> : <MediaFallback className={imgClassName} />;
+  if (!observable) {
+    return thumbnail ? <img src={thumbnail} alt={alt} className={imgClassName} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <MediaFallback className={imgClassName} />;
+  }
 
-  const active = inView && playMode !== null && !twitterFailed;
+  const activeVideo = inView && playMode?.kind === 'video' && videoReady && !twitterFailed;
+  const activeIframe = inView && playMode?.kind === 'iframe' && iframeReady;
+  const active = activeVideo || activeIframe;
   const showVideo = playMode?.kind === 'video' && !twitterFailed;
-  const showIframe = active && playMode?.kind === 'iframe';
+  const showIframe = inView && playMode?.kind === 'iframe';
 
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden">
-      {thumbnail ? <img src={thumbnail} alt={alt} className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} /> : <MediaFallback className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} />}
-      {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => isTwitter && setTwitterFailed(true)} onCanPlay={() => { if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0'}`} />}
-      {showIframe && playMode.kind === 'iframe' && <iframe src={playMode.src} className="absolute inset-0 h-full w-full" allow="autoplay; encrypted-media; picture-in-picture" title={alt} />}
+      {thumbnail ? <img src={thumbnail} alt={alt} className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <MediaFallback className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} />}
+      {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => { setTwitterFailed(isTwitter); setVideoReady(false); }} onCanPlay={() => { setVideoReady(true); if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${activeVideo ? 'opacity-100' : 'opacity-0'}`} />}
+      {showIframe && playMode.kind === 'iframe' && <iframe src={playMode.src} className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${activeIframe ? 'opacity-100' : 'opacity-0'}`} allow="autoplay; encrypted-media; picture-in-picture" title={alt} onLoad={() => setIframeReady(true)} />}
     </div>
   );
 }
