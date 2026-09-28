@@ -14,7 +14,7 @@ export function EvidenceCarousel({items}:{items:Evidence[]}){
   return (
     <>
       {/* Desktop / tablet only: expanding-panel rail */}
-      <div className="ev-rail hidden md:flex>
+      <div className="ev-rail hidden md:flex" onMouseLeave={()=>setActive(null)}>
         {items.map((item,i)=>{
           const isActive=active===i;
           const grow=active===null?1:isActive?7:0.55;
