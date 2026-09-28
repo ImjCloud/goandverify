@@ -38,12 +38,14 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const [twitterFailed, setTwitterFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [iframeReady, setIframeReady] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
   const isTwitter = embed.provider === 'twitter';
 
   useEffect(() => {
     setVideoReady(false);
     setIframeReady(false);
+    setThumbnailFailed(false);
     if (!isTwitter) return;
     setTwitterVideoSrc(null);
     setTwitterFailed(false);
@@ -71,9 +73,11 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     }
   }, [inView, playMode?.kind, playMode?.src]);
 
-  if (!observable) {
-    return thumbnail ? <img src={thumbnail} alt={alt} className={imgClassName} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <MediaFallback className={imgClassName} />;
-  }
+  const fallback = thumbnail && !thumbnailFailed
+    ? <img src={thumbnail} alt={alt} className={imgClassName} onError={() => setThumbnailFailed(true)} />
+    : <MediaFallback className={imgClassName} />;
+
+  if (!observable) return fallback;
 
   const activeVideo = inView && playMode?.kind === 'video' && videoReady && !twitterFailed;
   const activeIframe = inView && playMode?.kind === 'iframe' && iframeReady;
@@ -83,7 +87,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
 
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden">
-      {thumbnail ? <img src={thumbnail} alt={alt} className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <MediaFallback className={`${imgClassName ?? ''} transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`} />}
+      <div className={`absolute inset-0 transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`}>{fallback}</div>
       {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => { setTwitterFailed(isTwitter); setVideoReady(false); }} onCanPlay={() => { setVideoReady(true); if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${activeVideo ? 'opacity-100' : 'opacity-0'}`} />}
       {showIframe && playMode.kind === 'iframe' && <iframe src={playMode.src} className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${activeIframe ? 'opacity-100' : 'opacity-0'}`} allow="autoplay; encrypted-media; picture-in-picture" title={alt} onLoad={() => setIframeReady(true)} />}
     </div>
