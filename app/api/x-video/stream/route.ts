@@ -38,7 +38,7 @@ async function resolveXVideo(tweetUrl: string): Promise<string | null> {
   const endpoint = `https://cdn.syndication.twimg.com/tweet-result?id=${encodeURIComponent(id)}&token=${encodeURIComponent(syndicationToken(id))}`;
   const response = await fetch(endpoint, {
     headers: { 'User-Agent': 'Googlebot', Accept: 'application/json' },
-    next: { revalidate: 300 },
+    cache: 'no-store',
   });
   if (!response.ok) return null;
 
@@ -54,8 +54,12 @@ export async function GET(request: NextRequest) {
   try {
     const range = request.headers.get('range');
     upstream = await fetch(source, {
-      headers: range ? {Range: range} : undefined,
+      headers: {
+        ...(range ? {Range: range} : {}),
+        'User-Agent': 'Mozilla/5.0 GoAndVerify/1.0',
+      },
       redirect: 'follow',
+      cache: 'no-store',
     });
   } catch {
     return NextResponse.json({error: 'Unable to fetch X video'}, {status: 502});
@@ -70,8 +74,10 @@ export async function GET(request: NextRequest) {
     const value = upstream.headers.get(name);
     if (value) headers.set(name, value);
   }
-  headers.set('Cache-Control', 'public, max-age=300, s-maxage=300');
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Vary', 'Range');
 
   return new NextResponse(upstream.body, {status: upstream.status, headers});
 }
