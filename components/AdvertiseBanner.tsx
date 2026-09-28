@@ -8,16 +8,8 @@ import {AdvertCarousel} from '@/components/AdvertCarousel';
 
 export function AdvertiseBanner({ads = []}: {ads?: ApprovedAd[]}) {
   const pathname = usePathname();
-
-  // The public advert rail is intentionally not rendered inside the
-  // moderation console. The admin page has its own Adverts tab with
-  // approval, pause/resume, cancellation and analytics controls.
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return null;
-
-  if (ads.length > 0) {
-    return <AdvertCarousel ads={ads}/>;
-  }
-
+  if (ads.length > 0) return <AdvertCarousel ads={ads}/>;
   return (
     <section className="ad-banner border-y border-white/10 px-5 py-10" aria-label="Advertising opportunities">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface-2)] p-6 md:flex-row md:items-center md:justify-between md:p-8">
@@ -29,7 +21,7 @@ export function AdvertiseBanner({ads = []}: {ads?: ApprovedAd[]}) {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Promote a civic project, event, publication, service or community initiative in a space built around public interest.</p>
           </div>
         </div>
-        <Link href="/advertise" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Advertise here <ArrowUpRight size={16} /></Link>
+        <Link href="/advertise" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-base font-black uppercase tracking-wide text-[#15130f] shadow-lg transition-transform hover:scale-[1.03] focus-visible:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">Advertise here <ArrowUpRight size={18} strokeWidth={2.5} /></Link>
       </div>
     </section>
   );
