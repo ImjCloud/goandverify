@@ -8,7 +8,12 @@ export async function GET(req: NextRequest) {
 
   const admin = supabaseAdmin();
   const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads';
-  const {data, error} = await admin.from('submissions').select('*').order('created_at', {ascending: false});
+  const category = req.nextUrl.searchParams.get('category');
+  let query = admin.from('submissions').select('*').order('created_at', {ascending: false});
+  if (category === 'campaign_activity' || category === 'historical_event') {
+    query = query.eq('event_category', category);
+  }
+  const {data, error} = await query;
   if (error) return NextResponse.json({error: error.message}, {status: 500});
 
   const submissions = (data ?? []).map(row => {
