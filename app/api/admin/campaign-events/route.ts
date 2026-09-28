@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (isImageLink) {
       mediaType = 'image';
       storedThumbnail = storedThumbnail || mediaUrlInput;
-    } else if (embed.provider === 'youtube' || embed.provider === 'vimeo' || embed.provider === 'tiktok' || embed.provider === 'twitter' || embed.provider === 'file') {
+    } else if (embed.provider === 'youtube' || embed.provider === 'vimeo' || embed.provider === 'tiktok' || embed.provider === 'twitter' || embed.provider === 'instagram' || embed.provider === 'file') {
       mediaType = 'video';
     } else {
       return NextResponse.json({error: 'Campaign links must point to an image or a supported video (YouTube, Vimeo, TikTok, X, or a direct video file).'}, {status: 400});
