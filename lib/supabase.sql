@@ -261,6 +261,17 @@ alter table ad_requests add constraint ad_requests_contact_required
   check (coalesce(contact_email, '') <> '' or coalesce(contact_whatsapp, '') <> '');
 create index if not exists ad_requests_status_dates_idx on ad_requests(status, start_date, end_date);
 alter table ad_requests enable row level security;
+
+-- Advert analytics. One row represents one public impression or destination click.
+create table if not exists ad_events (
+  id uuid primary key default gen_random_uuid(),
+  ad_id uuid not null references ad_requests(id) on delete cascade,
+  event_type text not null check (event_type in ('impression','click')),
+  visitor_key text,
+  created_at timestamptz not null default now()
+);
+create index if not exists ad_events_ad_type_idx on ad_events(ad_id, event_type, created_at desc);
+alter table ad_events enable row level security;
 drop policy if exists "public can read approved adverts" on ad_requests;
 create policy "public can read approved adverts" on ad_requests for select using (
  status = 'approved' and (start_date is null or start_date <= current_date) and (end_date is null or end_date >= current_date)
