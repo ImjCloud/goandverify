@@ -30,8 +30,16 @@ export function AdvertCarousel({ads}: {ads: ApprovedAd[]}) {
     <section className="ad-banner border-y border-white/10 px-5 py-8" aria-label="Community adverts" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
       <div className="mx-auto max-w-5xl">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[.24em] text-[var(--accent)]">Featured community adverts</p>
-          <p className="text-xs text-[var(--muted)]" aria-live="polite">{index + 1} of {visibleAds.length}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-[.24em] text-[var(--accent)]">Featured community adverts</p>
+            <span className="hidden text-[10px] text-[var(--muted)] sm:inline">Moving right to left</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <p className="text-xs text-[var(--muted)]" aria-live="polite">{index + 1} of {visibleAds.length}</p>
+            <Link href="/advertise" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/50 bg-[var(--surface-2)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-[#15130f]">
+              <Plus size={13}/> Advertise here
+            </Link>
+          </div>
         </div>
         <div key={current.id} className="ad-flashcard-enter" aria-live="polite"><a href={current.target_url} target="_blank" rel="noreferrer" onClick={() => {const body=JSON.stringify({adId: current.id, eventType: 'click'}); if (navigator.sendBeacon) {navigator.sendBeacon('/api/ads/events', new Blob([body], {type: 'application/json'}));} else {void fetch('/api/ads/events', {method: 'POST', headers: {'Content-Type': 'application/json'}, body, keepalive: true});}}} className="ad-flashcard group block overflow-hidden rounded-2xl border border-white/10 bg-[var(--surface-2)]">
           {current.media_type === 'video' && current.media_url ? <video src={current.media_url} poster={current.image_url ?? undefined} muted autoPlay loop playsInline className="max-h-[360px] w-full bg-black object-cover" /> : (current.media_url || current.image_url) ? <img src={current.media_url || current.image_url || ''} alt="" className="max-h-[360px] w-full object-cover" /> : <div className="flex min-h-48 items-center justify-center bg-[var(--surface)] px-6 text-center"><div><ExternalLink className="mx-auto text-[var(--accent)]" size={28}/><p className="mt-3 text-sm font-bold">Open this featured link</p></div></div>}
