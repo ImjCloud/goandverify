@@ -97,6 +97,7 @@ export default function Admin() {
   const [ads, setAds] = useState<AdRequest[]>([]);
   const [adsLoading, setAdsLoading] = useState(false);
   const [adBusyId, setAdBusyId] = useState<string | null>(null);
+  const [adActionError, setAdActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [q, setQ] = useState('');
@@ -143,9 +144,16 @@ export default function Admin() {
 
   async function actOnAd(id: string, status: 'approved' | 'rejected') {
     setAdBusyId(id);
+    setAdActionError(null);
     try {
       const res = await fetch('/api/admin/ads', {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, status})});
-      if (res.ok) await loadAds();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not update this advert.');
+      }
+      await loadAds();
+    } catch (error: any) {
+      setAdActionError(error?.message || 'Could not update this advert.');
     } finally {
       setAdBusyId(null);
     }
@@ -508,7 +516,18 @@ export default function Admin() {
       )}
 
       {tab === 'adverts' && (
-        <div className="mt-6 overflow-x-auto border border-white/10 bg-[var(--surface)]">
+        <div className="mt-6">
+          {adActionError && (
+            <div className="mb-4 flex items-start gap-2 border border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-300">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <div>
+                <strong>Advert action failed.</strong>
+                <div className="mt-1">{adActionError}</div>
+                <div className="mt-1 text-xs text-amber-200/80">Advert approval requires the superadmin session. Sign in with the SUPERADMIN_PASSWORD account if this message says superadmin approval is required.</div>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto border border-white/10 bg-[var(--surface)]">
           <table className="min-w-[1000px] w-full text-left text-sm">
             <thead className="border-b border-white/10 bg-[var(--surface)]">
               <tr>{['Advert', 'Advertiser', 'Dates', 'Status', 'Action'].map(h => <th key={h} className="px-5 py-4 font-bold">{h}</th>)}</tr>
@@ -530,8 +549,9 @@ export default function Admin() {
               ))}
             </tbody>
           </table>
-          {!adsLoading && ads.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No advert requests yet.</div>}
-          {adsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading advert requests...</div>}
+            {!adsLoading && ads.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No advert requests yet.</div>}
+            {adsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading advert requests...</div>}
+          </div>
         </div>
       )}
 
