@@ -9,14 +9,15 @@ export async function GET(req: NextRequest) {
   const admin = supabaseAdmin();
   const {data, error} = await admin.from('ad_requests').select('*').order('created_at', {ascending: false});
   if (error) return NextResponse.json({error: error.message}, {status: 500});
-  const {data: events} = await admin.from('ad_events').select('ad_id,event_type');
+  const {data: events, error: eventsError} = await admin.from('ad_events').select('ad_id,event_type');
+  if (eventsError) return NextResponse.json({error: `Advert analytics are unavailable: ${eventsError.message}`}, {status: 500});
   const counts = new Map<string, {impressions: number; clicks: number}>();
   for (const event of events ?? []) {
     const count = counts.get(event.ad_id) ?? {impressions: 0, clicks: 0};
     if (event.event_type === 'click') count.clicks += 1; else count.impressions += 1;
     counts.set(event.ad_id, count);
   }
-  return NextResponse.json({ads: (data ?? []).map(ad => ({...ad, analytics: counts.get(ad.id) ?? {impressions: 0, clicks: 0}}))});
+  return NextResponse.json({ads: (data ?? []).map(ad => { const analytics = counts.get(ad.id) ?? {impressions: 0, clicks: 0}; return {...ad, analytics: {...analytics, ctr: analytics.impressions ? (analytics.clicks / analytics.impressions) * 100 : 0}}; })});
 }
 
 export async function PATCH(req: NextRequest) {
@@ -36,5 +37,27 @@ export async function PATCH(req: NextRequest) {
   if (error) return NextResponse.json({error: error.message}, {status: 500});
   if (status === 'approved' && ad) await admin.from('activity_events').insert({event_type: 'advert_published', title: ad.title, description: ad.description, href: ad.target_url});
   await logAudit(`advert_${pause ? body.action : status}`, 'ad_request', id, {status, action: body.action});
+  return NextResponse.json({ok: true});
+}
+
+
+export async function DELETE(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
+  if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
+  const body = await req.json().catch(() => ({}));
+  const id = typeof body.id === 'string' ? body.id : '';
+  if (!id) return NextResponse.json({error: 'Advert id is required.'}, {status: 400});
+
+  const admin = supabaseAdmin();
+  const {data: ad, error: fetchError} = await admin.from('ad_requests').select('id,title,media_path').eq('id', id).single();
+  if (fetchError || !ad) return NextResponse.json({error: 'Advert not found.'}, {status: 404});
+
+  const {error: deleteError} = await admin.from('ad_requests').delete().eq('id', id);
+  if (deleteError) return NextResponse.json({error: deleteError.message}, {status: 500});
+
+  if (ad.media_path) {
+    await admin.storage.from(process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads').remove([ad.media_path]);
+  }
+  await logAudit('advert_cancelled', 'ad_request', id, {title: ad.title});
   return NextResponse.json({ok: true});
 }
