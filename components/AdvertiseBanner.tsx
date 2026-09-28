@@ -18,7 +18,7 @@ export function AdvertiseBanner({ads = []}: {ads?: ApprovedAd[]}) {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Promote a civic project, event, publication, service or community initiative in a space built around public interest.</p>
           </div>
         </div>
-        <Link href="/contact" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Advertise here <ArrowUpRight size={16} /></Link>
+        <Link href="/advertise" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Advertise here <ArrowUpRight size={16} /></Link>
       </div>
     </section>
   );
