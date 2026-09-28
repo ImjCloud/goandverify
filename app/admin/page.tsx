@@ -523,7 +523,7 @@ export default function Admin() {
               <div>
                 <strong>Advert action failed.</strong>
                 <div className="mt-1">{adActionError}</div>
-                <div className="mt-1 text-xs text-amber-200/80">Advert approval requires the superadmin session. Sign in with the SUPERADMIN_PASSWORD account if this message says superadmin approval is required.</div>
+                <div className="mt-1 text-xs text-amber-200/80">Advert moderation is available to the authenticated admin account. Superadmin access is reserved for future higher-risk operations.</div>
               </div>
             </div>
           )}
