@@ -2,7 +2,7 @@
 import {useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'next/navigation';
 import Link from 'next/link';
-import {ShieldCheck, Search, Check, X, Clock3, FileText, Lock, Loader2, AlertTriangle, Link as LinkIcon, Flag} from 'lucide-react';
+import {ShieldCheck, Search, Check, X, Clock3, FileText, Lock, Loader2, AlertTriangle, Link as LinkIcon, Flag, Pause, Play, Trash2, MousePointerClick, Eye, BarChart3} from 'lucide-react';
 
 type Submission = {
   id: string;
@@ -70,7 +70,7 @@ type AdRequest = {
   status: 'pending' | 'approved' | 'rejected' | 'expired';
   paused_at: string | null;
   created_at: string;
-  analytics?: {impressions: number; clicks: number};
+  analytics?: {impressions: number; clicks: number; ctr: number};
 };
 
 export default function Admin() {
@@ -154,6 +154,22 @@ export default function Admin() {
       await loadAds();
     } catch (error: any) {
       setAdActionError(error?.message || 'Could not update this advert.');
+    } finally {
+      setAdBusyId(null);
+    }
+  }
+
+  async function cancelAd(id: string) {
+    if (!window.confirm('Cancel and permanently remove this advert request? This will also remove its uploaded media and analytics.')) return;
+    setAdBusyId(id);
+    setAdActionError(null);
+    try {
+      const res = await fetch('/api/admin/ads', {method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id})});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not cancel this advert.');
+      await loadAds();
+    } catch (error: any) {
+      setAdActionError(error?.message || 'Could not cancel this advert.');
     } finally {
       setAdBusyId(null);
     }
@@ -520,38 +536,75 @@ export default function Admin() {
           {adActionError && (
             <div className="mb-4 flex items-start gap-2 border border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-300">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <div>
-                <strong>Advert action failed.</strong>
-                <div className="mt-1">{adActionError}</div>
-                <div className="mt-1 text-xs text-amber-200/80">Advert moderation is available to the authenticated admin account. Superadmin access is reserved for future higher-risk operations.</div>
-              </div>
+              <div><strong>Advert action failed.</strong><div className="mt-1">{adActionError}</div></div>
             </div>
           )}
-          <div className="overflow-x-auto border border-white/10 bg-[var(--surface)]">
-          <table className="min-w-[1000px] w-full text-left text-sm">
-            <thead className="border-b border-white/10 bg-[var(--surface)]">
-              <tr>{['Advert', 'Advertiser', 'Dates', 'Status', 'Action'].map(h => <th key={h} className="px-5 py-4 font-bold">{h}</th>)}</tr>
-            </thead>
-            <tbody>
-              {ads.map(ad => (
-                <tr key={ad.id} className="border-b border-white/10 last:border-0 align-top">
-                  <td className="px-5 py-5">
-                    <div className="flex gap-3">
-                      {ad.media_type === 'video' && ad.media_url ? <video src={ad.media_url} muted className="h-14 w-20 shrink-0 rounded object-cover" /> : (ad.media_url || ad.image_url) ? <img src={ad.media_url || ad.image_url || ''} alt="" className="h-14 w-20 shrink-0 rounded object-cover" /> : <div className="h-14 w-20 shrink-0 rounded bg-[var(--surface-2)]" />}
-                      <div><div className="font-bold">{ad.title}</div><p className="mt-1 max-w-md text-xs text-[var(--muted)]">{ad.description}</p><a href={ad.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">Open destination</a></div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-5">{ad.advertiser_name}<div className="mt-1 text-xs text-[var(--muted)]">{[ad.contact_whatsapp && `WhatsApp: ${ad.contact_whatsapp}`, ad.contact_email].filter(Boolean).join(' · ')}</div></td>
-                  <td className="px-5 py-5 text-xs">{ad.start_date || 'Now'} - {ad.end_date || 'Ongoing'}<div className="mt-2 text-[var(--muted)]">{ad.analytics?.impressions ?? 0} views · {ad.analytics?.clicks ?? 0} clicks</div></td>
-                  <td className="px-5 py-5"><span className="rounded-full border border-white/10 px-3 py-1 text-xs">{ad.status}</span></td>
-                  <td className="px-5 py-5"><div className="flex gap-2"><button disabled={adBusyId === ad.id || ad.status === 'approved'} onClick={() => actOnAd(ad.id, 'approved')} className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f] disabled:opacity-40">{adBusyId === ad.id ? '...' : 'Approve'}</button><button disabled={adBusyId === ad.id || ad.status === 'rejected'} onClick={() => actOnAd(ad.id, 'rejected')} className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40">Reject</button>{ad.status === 'approved' && <button disabled={adBusyId === ad.id} onClick={() => toggleAd(ad.id, !!ad.paused_at)} className="rounded-full border border-white/15 px-3 py-2 text-xs font-bold">{ad.paused_at ? 'Resume' : 'Pause'}</button>}</div></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-            {!adsLoading && ads.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No advert requests yet.</div>}
-            {adsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading advert requests...</div>}
-          </div>
+
+          {(() => {
+            const totalViews = ads.reduce((n, ad) => n + (ad.analytics?.impressions ?? 0), 0);
+            const totalClicks = ads.reduce((n, ad) => n + (ad.analytics?.clicks ?? 0), 0);
+            const activeAds = ads.filter(ad => ad.status === 'approved' && !ad.paused_at).length;
+            const pausedAds = ads.filter(ad => ad.status === 'approved' && !!ad.paused_at).length;
+            const ctr = totalViews ? (totalClicks / totalViews) * 100 : 0;
+            return (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                  <AdMetric label="Total adverts" value={ads.length} icon={<BarChart3 size={18} />} />
+                  <AdMetric label="Active" value={activeAds} icon={<Play size={18} />} />
+                  <AdMetric label="Paused" value={pausedAds} icon={<Pause size={18} />} />
+                  <AdMetric label="Total views" value={totalViews.toLocaleString()} icon={<Eye size={18} />} />
+                  <AdMetric label="Total clicks" value={totalClicks.toLocaleString()} icon={<MousePointerClick size={18} />} sub={`CTR ${ctr.toFixed(2)}%`} />
+                </div>
+
+                <div className="mt-6 overflow-x-auto border border-white/10 bg-[var(--surface)]">
+                  <table className="min-w-[1250px] w-full text-left text-sm">
+                    <thead className="border-b border-white/10 bg-[var(--surface)]">
+                      <tr>{['Advert', 'Advertiser', 'Schedule', 'Views', 'Clicks', 'CTR', 'Status', 'Controls'].map(h => <th key={h} className="px-5 py-4 font-bold">{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {ads.map(ad => {
+                        const views = ad.analytics?.impressions ?? 0;
+                        const clicks = ad.analytics?.clicks ?? 0;
+                        const adCtr = views ? (clicks / views) * 100 : 0;
+                        const busy = adBusyId === ad.id;
+                        return (
+                          <tr key={ad.id} className="border-b border-white/10 last:border-0 align-top">
+                            <td className="px-5 py-5">
+                              <div className="flex gap-3">
+                                {ad.media_type === 'video' && ad.media_url ? <video src={ad.media_url} muted className="h-16 w-24 shrink-0 rounded object-cover" /> : (ad.media_url || ad.image_url) ? <img src={ad.media_url || ad.image_url || ''} alt="" className="h-16 w-24 shrink-0 rounded object-cover" /> : <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded bg-[var(--surface-2)]"><Eye size={18} /></div>}
+                                <div className="min-w-[240px]"><div className="font-bold">{ad.title}</div><p className="mt-1 max-w-md text-xs text-[var(--muted)]">{ad.description}</p><div className="mt-1 text-[10px] uppercase tracking-wider text-[var(--muted)]">{ad.media_type} · {ad.id.slice(0,8)}</div><a href={ad.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">Open destination</a></div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-5">{ad.advertiser_name}<div className="mt-1 text-xs text-[var(--muted)]">{[ad.contact_whatsapp && `WhatsApp: ${ad.contact_whatsapp}`, ad.contact_email].filter(Boolean).join(' · ')}</div></td>
+                            <td className="px-5 py-5 text-xs whitespace-nowrap">{ad.start_date || 'Now'}<br />to {ad.end_date || 'Ongoing'}</td>
+                            <td className="px-5 py-5"><div className="inline-flex items-center gap-1 font-bold"><Eye size={15} />{views.toLocaleString()}</div><div className="mt-1 text-xs text-[var(--muted)]">impressions</div></td>
+                            <td className="px-5 py-5"><div className="inline-flex items-center gap-1 font-bold"><MousePointerClick size={15} />{clicks.toLocaleString()}</div><div className="mt-1 text-xs text-[var(--muted)]">destination clicks</div></td>
+                            <td className="px-5 py-5 font-bold">{adCtr.toFixed(2)}%</td>
+                            <td className="px-5 py-5">
+                              <div className="grid gap-2">
+                                <span className="w-fit rounded-full border border-white/10 px-3 py-1 text-xs">{ad.status}</span>
+                                {ad.paused_at && <span className="w-fit rounded-full border border-amber-500/30 px-3 py-1 text-xs text-amber-300">Paused</span>}
+                              </div>
+                            </td>
+                            <td className="px-5 py-5">
+                              <div className="flex flex-wrap gap-2">
+                                <button disabled={busy || ad.status === 'approved'} onClick={() => actOnAd(ad.id, 'approved')} className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f] disabled:opacity-40">{busy ? '...' : 'Approve'}</button>
+                                <button disabled={busy || ad.status === 'rejected'} onClick={() => actOnAd(ad.id, 'rejected')} className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40">Reject</button>
+                                {ad.status === 'approved' && <button disabled={busy} onClick={() => toggleAd(ad.id, !!ad.paused_at)} className="inline-flex items-center gap-1 rounded-full border border-white/15 px-3 py-2 text-xs font-bold">{ad.paused_at ? <Play size={13} /> : <Pause size={13} />}{ad.paused_at ? 'Resume' : 'Pause'}</button>}
+                                <button disabled={busy} onClick={() => cancelAd(ad.id)} className="inline-flex items-center gap-1 rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700"><Trash2 size={13} />Cancel</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {!adsLoading && ads.length === 0 && <div className="p-12 text-center text-[var(--muted)]">No advert requests yet.</div>}
+                  {adsLoading && <div className="p-12 text-center text-[var(--muted)]">Loading advert analytics...</div>}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 
@@ -703,6 +756,16 @@ export default function Admin() {
         </p>
       </div>
     </main>
+  );
+}
+
+function AdMetric({label, value, icon, sub}: {label: string; value: string | number; icon: React.ReactNode; sub?: string}) {
+  return (
+    <div className="border border-white/10 bg-[var(--surface)] p-5">
+      <div className="flex items-center justify-between text-[var(--muted)]">{label}{icon}</div>
+      <div className="editorial-serif mt-4 text-4xl">{value}</div>
+      {sub && <div className="mt-1 text-xs text-[var(--muted)]">{sub}</div>}
+    </div>
   );
 }
 
