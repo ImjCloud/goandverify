@@ -45,6 +45,10 @@ function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string
   }
   if (embed.provider === 'vimeo') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&loop=1&background=1&playsinline=1'};
   if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0&playsinline=1'};
+  // Instagram's official embed is iframe-based. Mount it when the card is
+  // visible and request muted autoplay; Instagram may still ignore autoplay
+  // for embedded posts/reels, but the official playable embed remains visible.
+  if (embed.provider === 'instagram') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1'};
   return null;
 }
 
@@ -112,7 +116,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
         />
       )}
       {showIframe && playMode.kind === 'iframe' && (
-        <iframe src={playMode.src} className="absolute inset-0 h-full w-full" allow="autoplay; encrypted-media" title={alt} />
+        <iframe src={playMode.src} className="absolute inset-0 h-full w-full" allow="autoplay; encrypted-media; picture-in-picture" title={alt} />
       )}
     </div>
   );
