@@ -1,105 +1,11 @@
+import {cache} from 'react';
 import type {Evidence} from './data';
 import {evidence as demoEvidence} from './data';
-import {supabasePublicConfigured, supabasePublic} from './supabase/server';
+import {supabasePublicConfigured,supabasePublic} from './supabase/server';
 
-const DB_TO_UI_VERIFICATION: Record<string, Evidence['verification']> = {
-  submitted: 'User Submitted',
-  under_review: 'Under Review',
-  source_verified: 'Source Verified',
-  partially_verified: 'Partially Verified',
-  disputed: 'Disputed',
-  archived: 'Archived',
-};
-
-// Rows readable by the anon key are already scoped by the RLS policy in
-// lib/supabase.sql ("public can read evidence" — verification_status in
-// source_verified/partially_verified/disputed/archived). Pending/under-review
-// submissions never reach the public site through this path.
-function rowToEvidence(row: any): Evidence {
-  const eventDate: string | null = row.event_date ?? row.publication_date ?? null;
-  return {
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    type: row.type,
-    year: eventDate ? new Date(eventDate).getFullYear() : new Date(row.created_at).getFullYear(),
-    date: eventDate ?? row.created_at,
-    location: [row.location_city, row.location_state, row.location_country].filter(Boolean).join(', ') || 'Location unspecified',
-    author: row.author ?? row.uploader_name ?? 'Unattributed',
-    source: row.source_name ?? 'Unspecified source',
-    sourceUrl: row.source_url ?? '#',
-    description: row.description,
-    verification: DB_TO_UI_VERIFICATION[row.verification_status] ?? 'Under Review',
-    // `image` used to fall back to `media_url` when there was no thumbnail —
-    // but media_url is a page link (a tweet, a YouTube page…), not a
-    // picture, so an <img src> pointed at it always rendered broken. null
-    // means "genuinely no thumbnail"; every place that renders `image` shows
-    // MediaFallback for that case instead of a broken image icon.
-    image: row.thumbnail_url ?? null,
-    // Kept distinct from `image`: image is always the display thumbnail
-    // (often a .jpg even for a video), mediaUrl is the actual underlying
-    // link (YouTube/Vimeo/file URL) used to detect and build an embed.
-    mediaUrl: row.media_url ?? null,
-    tags: Array.isArray(row.tags) ? row.tags.map((t: any) => t?.tag?.name).filter(Boolean) : [],
-    waybackUrl: row.wayback_url ?? null,
-    eventCategory: row.event_category ?? null,
-    aboutPerson: row.about_person ?? null,
-  };
-}
-
-export async function getPublishedEvidence(): Promise<Evidence[]> {
-  if (!supabasePublicConfigured) return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
-  try {
-    // Every row in `evidence` got there via an admin Approve action — the
-    // table itself is the publish gate, verification_status is just a badge.
-    const {data, error} = await supabasePublic()
-      .from('evidence')
-      // Keep the public query independent of evidence_tags/tags RLS.
-      // Those tables are admin-managed metadata and are not required to render
-      // the public archive. Selecting the evidence row directly keeps the
-      // archive readable even when tag tables are not exposed to anon.
-      .select('id,slug,title,type,description,event_date,publication_date,location_city,location_state,location_country,author,source_name,source_url,media_url,thumbnail_url,verification_status,uploader_name,created_at,updated_at,wayback_url,event_category,about_person')
-      .order('created_at', {ascending: false});
-    if (error || !data) return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
-    return data.length ? data.map(rowToEvidence) : [];
-  } catch {
-    return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
-  }
-}
-
-
-export async function searchEvidence(query: string): Promise<Evidence[]> {
-  const q = query.trim();
-  if (!q) return [];
-  if (!supabasePublicConfigured) {
-    const needle = q.toLowerCase();
-    return demoEvidence.filter(e => `${e.title} ${e.description} ${e.source} ${e.location}`.toLowerCase().includes(needle));
-  }
-  try {
-    // Ranked full-text search via the search_evidence() Postgres function
-    // (lib/supabase.sql) — weighted title > description > source/location,
-    // using websearch_to_tsquery so visitors can type naturally.
-    const {data, error} = await supabasePublic().rpc('search_evidence', {query: q});
-    if (error || !data) return [];
-    return data.map(rowToEvidence);
-  } catch {
-    return [];
-  }
-}
-
-export async function getEvidenceBySlug(slug: string): Promise<Evidence | undefined> {
-  if (!supabasePublicConfigured) return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
-  try {
-    const {data, error} = await supabasePublic()
-      .from('evidence')
-      // Match getPublishedEvidence(): do not require public access to tag
-      // metadata just to open an evidence detail page.
-      .select('id,slug,title,type,description,event_date,publication_date,location_city,location_state,location_country,author,source_name,source_url,media_url,thumbnail_url,verification_status,uploader_name,created_at,updated_at,wayback_url,event_category,about_person')
-      .eq('slug', slug)
-      .maybeSingle();
-    if (error || !data) return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
-    return rowToEvidence(data);
-  } catch {
-    return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
-  }
-}
+const DB_TO_UI_VERIFICATION:Record<string,Evidence['verification']>={submitted:'User Submitted',under_review:'Under Review',source_verified:'Source Verified',partially_verified:'Partially Verified',disputed:'Disputed',archived:'Archived'};
+function rowToEvidence(row:any):Evidence{const eventDate:string|null=row.event_date??row.publication_date??null;return{id:row.id,slug:row.slug,title:row.title,type:row.type,year:eventDate?new Date(eventDate).getFullYear():new Date(row.created_at).getFullYear(),date:eventDate??row.created_at,location:[row.location_city,row.location_state,row.location_country].filter(Boolean).join(', ')||'Location unspecified',author:row.author??row.uploader_name??'Unattributed',source:row.source_name??'Unspecified source',sourceUrl:row.source_url??'#',description:row.description,verification:DB_TO_UI_VERIFICATION[row.verification_status]??'Under Review',image:row.thumbnail_url??null,mediaUrl:row.media_url??null,tags:Array.isArray(row.tags)?row.tags.map((t:any)=>t?.tag?.name).filter(Boolean):[],waybackUrl:row.wayback_url??null,eventCategory:row.event_category??null,aboutPerson:row.about_person??null}}
+const EVIDENCE_COLUMNS='id,slug,title,type,description,event_date,publication_date,location_city,location_state,location_country,author,source_name,source_url,media_url,thumbnail_url,verification_status,uploader_name,created_at,updated_at,wayback_url,event_category,about_person';
+export async function getPublishedEvidence():Promise<Evidence[]>{if(!supabasePublicConfigured)return process.env.NODE_ENV==='production'?[]:demoEvidence;try{const{data,error}=await supabasePublic().from('evidence').select(EVIDENCE_COLUMNS).order('created_at',{ascending:false});if(error||!data)return process.env.NODE_ENV==='production'?[]:demoEvidence;return data.length?data.map(rowToEvidence):[]}catch{return process.env.NODE_ENV==='production'?[]:demoEvidence}}
+export async function searchEvidence(query:string):Promise<Evidence[]>{const q=query.trim();if(!q)return[];if(!supabasePublicConfigured){const needle=q.toLowerCase();return demoEvidence.filter(e=>`${e.title} ${e.description} ${e.source} ${e.location}`.toLowerCase().includes(needle))}try{const{data,error}=await supabasePublic().rpc('search_evidence',{query:q});if(error||!data)return[];return data.map(rowToEvidence)}catch{return[]}}
+export const getEvidenceBySlug=cache(async(slug:string):Promise<Evidence|undefined>=>{if(!supabasePublicConfigured)return process.env.NODE_ENV==='production'?undefined:demoEvidence.find(e=>e.slug===slug);try{const{data,error}=await supabasePublic().from('evidence').select(EVIDENCE_COLUMNS).eq('slug',slug).maybeSingle();if(error||!data)return process.env.NODE_ENV==='production'?undefined:demoEvidence.find(e=>e.slug===slug);return rowToEvidence(data)}catch{return process.env.NODE_ENV==='production'?undefined:demoEvidence.find(e=>e.slug===slug)}});
