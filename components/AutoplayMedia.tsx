@@ -18,10 +18,11 @@ function useInView<T extends HTMLElement>(threshold = 0.1) {
   return [ref, inView] as const;
 }
 
-type PlayMode = {kind: 'video'; src: string} | {kind: 'iframe'; src: string};
+type PlayMode = {kind: 'video'; src: string} | {kind: 'iframe'; src: string} | {kind: 'image'; src: string};
 
-function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string | null): PlayMode | null {
+function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string | null, mediaUrl?: string | null): PlayMode | null {
   if (embed.provider === 'file') return {kind: 'video', src: embed.embedUrl!};
+  if (!embed.provider && mediaUrl && /\.(avif|gif|jpe?g|png|webp|svg)(\?.*)?$/i.test(mediaUrl)) return {kind: 'image', src: mediaUrl};
   if (embed.provider === 'twitter') return twitterVideoSrc ? {kind: 'video', src: twitterVideoSrc} : null;
   if (embed.provider === 'youtube') {
     const id = embed.embedUrl?.split('/').pop();
@@ -78,7 +79,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     };
   }, [isTwitter, inView, twitterFailed]);
 
-  const playMode = getPlayMode(embed, twitterVideoSrc);
+  const playMode = getPlayMode(embed, twitterVideoSrc, mediaUrl);
   const observable = playMode !== null || isTwitter;
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -103,15 +104,18 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
 
   const activeVideo = inView && playMode?.kind === 'video' && videoReady && !twitterFailed;
   const activeIframe = inView && playMode?.kind === 'iframe' && iframeReady;
-  const active = activeVideo || activeIframe;
+  const activeImage = playMode?.kind === 'image';
+  const active = activeVideo || activeIframe || activeImage;
   const showVideo = playMode?.kind === 'video' && !twitterFailed;
   const showIframe = inView && playMode?.kind === 'iframe';
+  const showImage = playMode?.kind === 'image';
 
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden">
       <div className={`absolute inset-0 transition-opacity duration-300 ${active ? 'opacity-0' : 'opacity-100'}`}>{fallback}</div>
       {showVideo && playMode && <video ref={videoRef} src={playMode.src} muted loop playsInline preload="auto" autoPlay onError={() => { if (isTwitter) { setTwitterFailed(true); setVideoReady(false); } }} onCanPlay={() => { setVideoReady(true); if (inView) void videoRef.current?.play().catch(() => undefined); }} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${activeVideo ? 'opacity-100' : 'opacity-0'}`} />}
       {showIframe && playMode.kind === 'iframe' && <iframe src={playMode.src} className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${activeIframe ? 'opacity-100' : 'opacity-0'}`} allow="autoplay; encrypted-media; picture-in-picture" title={alt} onLoad={() => setIframeReady(true)} />}
+      {showImage && playMode.kind === 'image' && <img src={playMode.src} alt={alt} className={`absolute inset-0 h-full w-full object-contain bg-black transition-opacity duration-300 ${activeImage ? 'opacity-100' : 'opacity-0'} ${imgClassName || ''}`} onError={() => setThumbnailFailed(true)} />}
     </div>
   );
 }
