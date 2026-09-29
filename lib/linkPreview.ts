@@ -1,4 +1,5 @@
 import dns from 'dns/promises';
+import net from 'net';
 
 export type LinkPreview = {
   mediaUrl: string;
@@ -50,17 +51,27 @@ function decodeHtmlEntities(value: string): string {
 // addresses on the submitter's behalf (localhost, RFC1918 ranges, and the
 // 169.254.169.254 link-local range used by cloud metadata services).
 export async function isPrivateHost(hostname: string): Promise<boolean> {
-  if (['localhost', '0.0.0.0'].includes(hostname)) return true;
-  try {
-    const {address} = await dns.lookup(hostname);
-    if (address === '127.0.0.1' || address.startsWith('127.')) return true;
-    if (address.startsWith('10.')) return true;
-    if (address.startsWith('192.168.')) return true;
-    if (address.startsWith('169.254.')) return true;
-    if (address === '::1') return true;
-    const parts = address.split('.').map(Number);
-    if (parts.length === 4 && parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+  const normalized = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (['localhost', '0.0.0.0', '::'].includes(normalized) || normalized.endsWith('.localhost')) return true;
+  const isPrivateIp = (address: string) => {
+    const ip = address.toLowerCase();
+    if (net.isIPv4(ip)) {
+      const parts = ip.split('.').map(Number);
+      return parts[0] === 10 || parts[0] === 127 ||
+        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+        (parts[0] === 192 && parts[1] === 168) ||
+        (parts[0] === 169 && parts[1] === 254) ||
+        (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127);
+    }
+    if (net.isIPv6(ip)) {
+      return ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe8') || ip.startsWith('fe9') || ip.startsWith('fea') || ip.startsWith('feb') || ip.startsWith('::ffff:127.') || ip.startsWith('::ffff:10.') || ip.startsWith('::ffff:192.168.');
+    }
     return false;
+  };
+  if (net.isIP(normalized) && isPrivateIp(normalized)) return true;
+  try {
+    const addresses = await dns.lookup(normalized, {all: true});
+    return addresses.some(({address}) => isPrivateIp(address));
   } catch {
     return true; // fail closed: if we can't resolve it, don't fetch it
   }
