@@ -3,6 +3,42 @@ import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
 import {logAudit} from '@/lib/auditLog';
 
+
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
+  if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
+  const form = await req.formData();
+  const id = String(form.get('id') ?? '').trim();
+  const mediaKind = String(form.get('mediaKind') ?? '').trim();
+  const rawFile = form.get('file');
+  const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
+  if (!id || !file) return NextResponse.json({error: 'Advert and media file are required.'}, {status: 400});
+  if (!['image','video'].includes(mediaKind)) return NextResponse.json({error: 'Media must be an image or video.'}, {status: 400});
+  if (file.size > 30 * 1024 * 1024) return NextResponse.json({error: 'Upload an image or video file up to 30MB.'}, {status: 400});
+  const allowed = mediaKind === 'image' ? file.type.startsWith('image/') : file.type.startsWith('video/');
+  if (!allowed) return NextResponse.json({error: mediaKind === 'image' ? 'Please choose an image file.' : 'Please choose a video file.'}, {status: 400});
+  const admin = supabaseAdmin();
+  const {data: current, error: fetchError} = await admin.from('ad_requests').select('id,media_path').eq('id', id).single();
+  if (fetchError || !current) return NextResponse.json({error: 'Advert not found.'}, {status: 404});
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'evidence-uploads';
+  const extension = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const mediaPath = `adverts/${randomUUID()}.${extension}`;
+  const upload = await admin.storage.from(bucket).upload(mediaPath, new Uint8Array(await file.arrayBuffer()), {contentType: file.type || undefined, cacheControl: '3600'});
+  if (upload.error) return NextResponse.json({error: 'Could not upload the advert media.'}, {status: 500});
+  const publicUrl = admin.storage.from(bucket).getPublicUrl(mediaPath).data.publicUrl;
+  const patch = mediaKind === 'image'
+    ? {media_type: 'image', media_url: publicUrl, image_url: publicUrl, media_path: mediaPath, updated_at: new Date().toISOString()}
+    : {media_type: 'video', media_url: publicUrl, media_path: mediaPath, updated_at: new Date().toISOString()};
+  const {data, error} = await admin.from('ad_requests').update(patch).eq('id', id).select('*').single();
+  if (error) {
+    await admin.storage.from(bucket).remove([mediaPath]).catch(() => {});
+    return NextResponse.json({error: 'Could not update the advert media.'}, {status: 500});
+  }
+  if (current.media_path && current.media_path !== mediaPath) await admin.storage.from(bucket).remove([current.media_path]).catch(() => {});
+  await logAudit('advert_media_updated', 'ad_request', id, {mediaKind, fileName: file.name});
+  return NextResponse.json({ok: true, ad: data});
+}
+
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
   if (!supabaseConfigured) return NextResponse.json({error: 'Supabase is not configured.'}, {status: 503});
