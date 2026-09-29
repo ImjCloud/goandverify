@@ -43,6 +43,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   const [iframeReady, setIframeReady] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
 
   const embed = mediaUrl ? getEmbed(mediaUrl) : {provider: null, embedUrl: null};
   const isTwitter = embed.provider === 'twitter';
@@ -54,6 +55,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     setTwitterVideoSrc(null);
     setTwitterFailed(false);
     setTwitterRetry(0);
+    retryCountRef.current = 0;
   }, [isTwitter, embed.embedUrl]);
 
   useEffect(() => {
@@ -64,8 +66,13 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
 
   useEffect(() => {
     if (!isTwitter || !inView || !twitterFailed) return;
+    if (retryCountRef.current >= 5) return;
     if (retryTimer.current) clearTimeout(retryTimer.current);
-    retryTimer.current = setTimeout(() => setTwitterRetry(value => value + 1), 900);
+    const delay = Math.min(900 * 2 ** retryCountRef.current, 8000);
+    retryTimer.current = setTimeout(() => {
+      retryCountRef.current += 1;
+      setTwitterRetry(value => value + 1);
+    }, delay);
     return () => {
       if (retryTimer.current) clearTimeout(retryTimer.current);
     };
