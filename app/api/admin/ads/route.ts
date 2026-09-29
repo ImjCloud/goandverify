@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import {NextRequest, NextResponse} from 'next/server';
 import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured, supabaseAdmin} from '@/lib/supabase/server';
