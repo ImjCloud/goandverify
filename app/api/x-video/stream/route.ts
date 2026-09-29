@@ -1,4 +1,5 @@
 import {NextRequest, NextResponse} from 'next/server';
+import {checkRateLimit, getClientIp} from '@/lib/rateLimit';
 
 function extractTweetId(url: string): string | null {
   try {
@@ -46,6 +47,9 @@ async function resolveXVideo(tweetUrl: string): Promise<string | null> {
 }
 
 export async function GET(request: NextRequest) {
+  const rate = await checkRateLimit(`x-video:${getClientIp(request)}`, 300, 600);
+  if (!rate.allowed) return NextResponse.json({error: 'Too many video requests. Please try again shortly.'}, {status: 429});
+
   const tweetUrl = request.nextUrl.searchParams.get('url')?.trim() ?? '';
   const source = await resolveXVideo(tweetUrl);
   if (!source) return NextResponse.json({error: 'X video unavailable'}, {status: 404});
