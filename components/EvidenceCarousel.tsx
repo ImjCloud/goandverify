@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import type {MouseEvent} from 'react';
 import {ArrowLeft,ArrowRight,ArrowUpRight,CheckCircle2,AlertTriangle,Clock3,Archive,Camera} from 'lucide-react';
 import Link from 'next/link';
@@ -58,12 +58,12 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
 
   const renderMedia=(entry:DisplayItem,mobile=false)=>{
     const className=mobile?'h-full w-full object-cover':'ev-panel-img';
-    if(entry.kind==='campaign')return <CampaignMedia item={entry.item} className={className} />;
+    if(entry.kind==='campaign')return <CampaignMedia item={entry.item} className={className}/>;
     const item=entry.item;
     const provider=getEmbed(item.mediaUrl||item.sourceUrl)?.provider;
     const playable=item.type==='video'||VIDEO_PROVIDERS.includes(provider||'');
-    if(playable)return <AutoplayMedia mediaUrl={item.mediaUrl||item.sourceUrl} mediaType={item.type} thumbnail={item.image} alt={item.title} imgClassName={className} />;
-    if(item.type==='image'&&item.mediaUrl)return <AutoplayMedia mediaUrl={item.mediaUrl} mediaType="image" thumbnail={item.image} alt={item.title} imgClassName={className} />;
+    if(playable)return <AutoplayMedia mediaUrl={item.mediaUrl||item.sourceUrl} mediaType={item.type} thumbnail={item.image} alt={item.title} imgClassName={className}/>;
+    if(item.type==='image'&&item.mediaUrl)return <AutoplayMedia mediaUrl={item.mediaUrl} mediaType="image" thumbnail={item.image} alt={item.title} imgClassName={className}/>;
     if(item.image)return <img src={item.image} alt={item.title} className={className}/>;
     return <MediaFallback className={className}/>;
   };
@@ -74,12 +74,16 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
         <div key={page} className={`ev-rail ev-set-${direction}`} onMouseLeave={()=>setActive(null)}>
           {visible.map((entry,index)=>{
             const isActive=index===active;
-            const item=entry.item;
             const isCampaign=entry.kind==='campaign';
+            const item=entry.item;
             const href=isCampaign?`/campaign/${item.id}`:`/evidence/${item.slug}`;
             const title=item.title;
             const description=item.description||'Approved campaign upload.';
             const location=isCampaign?(item.location||'Campaign'):(item.location||'Location unspecified');
+            const yearOrDate=isCampaign?(item.event_date||'Recent'):item.year;
+            const verificationLabel=isCampaign?'Campaign upload':item.verification;
+            const sourceLabel=isCampaign?'Community campaign upload':item.author;
+            const sourceDetail=isCampaign?'Approved campaign media':`Source: ${item.source}`;
             return <Link key={`${entry.kind}-${item.id}`} href={href} className={`ev-panel ${isActive?'is-active':''}`} aria-label={`View ${isCampaign?'campaign upload':'evidence'}: ${title}`} style={{flexGrow:active===null?1:isActive?7:.55}} onMouseEnter={()=>setActive(index)} onFocus={()=>setActive(index)} tabIndex={0}>
               <div className="ev-panel-media">
                 {renderMedia(entry)}
@@ -88,12 +92,12 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
               </div>
               <div className="ev-panel-summary">
                 <div className="ev-panel-meta">
-                  <span>{isCampaign?(item.event_date||'Recent'):item.year} · {location}</span>
-                  <span className="inline-flex items-center gap-1">{isCampaign?<><Camera size={13}/> Campaign upload</>:<>{icon(item.verification)} {item.verification}</>}</span>
+                  <span>{yearOrDate} · {location}</span>
+                  <span className="inline-flex items-center gap-1">{isCampaign?<><Camera size={13}/>{verificationLabel}</>:<>{icon(item.verification)} {verificationLabel}</>}</span>
                 </div>
                 <h3 className="editorial-serif ev-panel-title">{title}</h3>
                 <p className="ev-panel-desc">{description}</p>
-                <div className="ev-panel-source"><span>{isCampaign?'Community campaign upload':item.author}</span><span className="font-semibold">{isCampaign?'Approved campaign media':`Source: ${item.source}`}</span></div>
+                <div className="ev-panel-source"><span>{sourceLabel}</span><span className="font-semibold">{sourceDetail}</span></div>
                 <span className="ev-panel-cta">View {isCampaign?'campaign media':'evidence'} <ArrowUpRight size={14}/></span>
               </div>
             </Link>;
@@ -102,15 +106,20 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
         {pageCount>1&&<button type="button" aria-label="Show more evidence" onClick={()=>changePage('next')} className="ev-more-arrow" title="More evidence"><ArrowRight size={22}/><span>More</span></button>}
         {pageCount>1&&<button type="button" aria-label="Show previous evidence" onClick={()=>changePage('prev')} className="ev-prev-arrow" title="Previous evidence"><ArrowLeft size={20}/></button>}
       </div>
-      {pageCount>1&&<div className="mt-4 flex items-center justify-between gap-4 text-xs text-[var(--muted)]"><span>Set {page+1} of {pageCount} · Evidence and approved campaign uploads</span><button onClick={()=>changePage('next')} className="inline-flex items-center gap-1 font-bold text-[var(--accent)]">Next set <ArrowRight size={14}/></button></div>}
+      {pageCount>1&&<div className="mt-4 flex items-center justify-between gap-4 text-xs text-[var(--muted)]"><span>Set {page+1} of {pageCount} · Evidence and approved campaign uploads</span><button type="button" onClick={()=>changePage('next')} className="inline-flex items-center gap-1 font-bold text-[var(--accent)]">Next set <ArrowRight size={14}/></button></div>}
     </div>
 
     <div className="ev-mobile-rail flex md:hidden">
       {visible.map(entry=>{
-        const item=entry.item;const isCampaign=entry.kind==='campaign';const href=isCampaign?`/campaign/${item.id}`:`/evidence/${item.slug}`;
+        const item=entry.item;
+        const isCampaign=entry.kind==='campaign';
+        const href=isCampaign?`/campaign/${item.id}`:`/evidence/${item.slug}`;
+        const mobileYear=isCampaign?(item.event_date||'Recent'):item.year;
+        const mobileLocation=isCampaign?(item.location||'Campaign'):(item.location||'');
+        const mobileStatus=isCampaign?'Campaign':item.verification;
         return <Link key={`${entry.kind}-${item.id}`} href={href} className="ev-mobile-card">
           <div className="relative aspect-[4/3] overflow-hidden bg-black">{renderMedia(entry,true)}<div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{isCampaign?'Campaign':item.type}</div></div>
-          <div className="p-5"><div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]"><span>{isCampaign?(item.event_date||'Recent'):item.year} · {isCampaign?(item.location||'Campaign'):(item.location||'')}</span><span>{isCampaign?'Campaign':item.verification}</span></div><h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3><p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description||'Approved campaign upload.'}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View {isCampaign?'campaign media':'evidence'} <ArrowUpRight size={14}/></span></div>
+          <div className="p-5"><div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]"><span>{mobileYear} · {mobileLocation}</span><span>{mobileStatus}</span></div><h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3><p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description||'Approved campaign upload.'}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View {isCampaign?'campaign media':'evidence'} <ArrowUpRight size={14}/></span></div>
         </Link>;
       })}
     </div>
