@@ -75,7 +75,7 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
           {visible.map((entry,index)=>{
             const isActive=index===active;
             const isCampaign=entry.kind==='campaign';
-            const item=entry.item;
+            const item=entry.item as Evidence & CampaignEvent;
             const href=isCampaign
               ? `/campaign/${entry.item.id}`
               : `/evidence/${entry.item.slug}`;
@@ -123,8 +123,8 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
 
     <div className="ev-mobile-rail flex md:hidden">
       {visible.map(entry=>{
-        const item=entry.item;
         const isCampaign=entry.kind==='campaign';
+        const item=entry.item as Evidence & CampaignEvent;
         const href=isCampaign
           ? `/campaign/${entry.item.id}`
           : `/evidence/${entry.item.slug}`;
