@@ -54,7 +54,11 @@ export async function getPublishedEvidence(): Promise<Evidence[]> {
     // table itself is the publish gate, verification_status is just a badge.
     const {data, error} = await supabasePublic()
       .from('evidence')
-      .select('*, tags:evidence_tags(tag:tags(name))')
+      // Keep the public query independent of evidence_tags/tags RLS.
+      // Those tables are admin-managed metadata and are not required to render
+      // the public archive. Selecting the evidence row directly keeps the
+      // archive readable even when tag tables are not exposed to anon.
+      .select('id,slug,title,type,description,event_date,publication_date,location_city,location_state,location_country,author,source_name,source_url,media_url,thumbnail_url,verification_status,uploader_name,created_at,updated_at,wayback_url,event_category,about_person')
       .order('created_at', {ascending: false});
     if (error || !data) return process.env.NODE_ENV === 'production' ? [] : demoEvidence;
     return data.length ? data.map(rowToEvidence) : [];
@@ -88,7 +92,9 @@ export async function getEvidenceBySlug(slug: string): Promise<Evidence | undefi
   try {
     const {data, error} = await supabasePublic()
       .from('evidence')
-      .select('*, tags:evidence_tags(tag:tags(name))')
+      // Match getPublishedEvidence(): do not require public access to tag
+      // metadata just to open an evidence detail page.
+      .select('id,slug,title,type,description,event_date,publication_date,location_city,location_state,location_country,author,source_name,source_url,media_url,thumbnail_url,verification_status,uploader_name,created_at,updated_at,wayback_url,event_category,about_person')
       .eq('slug', slug)
       .maybeSingle();
     if (error || !data) return process.env.NODE_ENV === 'production' ? undefined : demoEvidence.find(e => e.slug === slug);
