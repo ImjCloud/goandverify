@@ -32,6 +32,7 @@ function getPlayMode(embed: ReturnType<typeof getEmbed>, twitterVideoSrc: string
   if (embed.provider === 'tiktok') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1&controls=0&playsinline=1'};
   if (embed.provider === 'facebook') return {kind: 'iframe', src: embed.embedUrl + '&autoplay=true'};
   if (embed.provider === 'instagram') return {kind: 'iframe', src: embed.embedUrl + '?autoplay=1&muted=1'};
+  if (embed.provider === 'threads') return {kind: 'iframe', src: embed.embedUrl!};
   return null;
 }
 
@@ -63,7 +64,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     if (!isTwitter || !embed.embedUrl) return;
     setTwitterFailed(false);
     setTwitterVideoSrc('/api/x-video/stream?url=' + encodeURIComponent(embed.embedUrl) + '&retry=' + twitterRetry);
-  }, [isTwitter, inView, embed.embedUrl, twitterRetry]);
+  }, [isTwitter, embed.embedUrl, twitterRetry]);
 
   useEffect(() => {
     if (!isTwitter || !twitterFailed) return;
@@ -77,7 +78,7 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
     return () => {
       if (retryTimer.current) clearTimeout(retryTimer.current);
     };
-  }, [isTwitter, inView, twitterFailed]);
+  }, [isTwitter, twitterFailed]);
 
   const playMode = getPlayMode(embed, twitterVideoSrc, mediaUrl);
   const observable = playMode !== null || isTwitter;
