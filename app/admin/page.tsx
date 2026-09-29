@@ -2,7 +2,7 @@
 import {useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'next/navigation';
 import Link from 'next/link';
-import {ShieldCheck, Search, Check, X, Clock3, FileText, Lock, Loader2, AlertTriangle, Link as LinkIcon, Flag, Pause, Play, Trash2, MousePointerClick, Eye, BarChart3} from 'lucide-react';
+import {ShieldCheck, Search, Check, X, Clock3, FileText, Lock, Loader2, AlertTriangle, Link as LinkIcon, Flag, Pause, Play, Trash2, MousePointerClick, Eye, BarChart3, Pencil} from 'lucide-react';
 
 type Submission = {
   id: string;
@@ -416,7 +416,7 @@ export default function Admin() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/admin/evidence" className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Edit evidence</Link>
-          <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">View public archive</Link>
+          <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">View public archive</Link><Link href="/admin/adverts" className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-[var(--accent)] px-5 py-3 text-sm font-black text-[#15130f]"><Pencil size={16}/> Edit / Update adverts</Link>
         </div>
       </div>
 
@@ -610,7 +610,7 @@ export default function Admin() {
                             </td>
                             <td className="px-5 py-5">
                               <div className="flex flex-wrap gap-2">
-                                <button disabled={busy || ad.status === 'approved'} onClick={() => actOnAd(ad.id, 'approved')} className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f] disabled:opacity-40">{busy ? '...' : 'Approve'}</button>
+                                <Link href="/admin/adverts" className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f]"><Pencil size={13}/> Edit / Update</Link><button disabled={busy || ad.status === 'approved'} onClick={() => actOnAd(ad.id, 'approved')} className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[#15130f] disabled:opacity-40">{busy ? '...' : 'Approve'}</button>
                                 <button disabled={busy || ad.status === 'rejected'} onClick={() => actOnAd(ad.id, 'rejected')} className="rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-40">Reject</button>
                                 {ad.status === 'approved' && <button disabled={busy} onClick={() => toggleAd(ad.id, !!ad.paused_at)} className="inline-flex items-center gap-1 rounded-full border border-white/15 px-3 py-2 text-xs font-bold">{ad.paused_at ? <Play size={13} /> : <Pause size={13} />}{ad.paused_at ? 'Resume' : 'Pause'}</button>}
                                 <button disabled={busy} onClick={() => cancelAd(ad.id)} className="inline-flex items-center gap-1 rounded-full border border-red-900/50 px-3 py-2 text-xs font-bold text-red-700"><Trash2 size={13} />Cancel</button>
