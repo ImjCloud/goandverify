@@ -76,14 +76,26 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
             const isActive=index===active;
             const isCampaign=entry.kind==='campaign';
             const item=entry.item;
-            const href=isCampaign?`/campaign/${item.id}`:`/evidence/${item.slug}`;
-            const title=item.title;
-            const description=item.description||'Approved campaign upload.';
-            const location=isCampaign?(item.location||'Campaign'):(item.location||'Location unspecified');
-            const yearOrDate=isCampaign?(item.event_date||'Recent'):item.year;
-            const verificationLabel=isCampaign?'Campaign upload':item.verification;
-            const sourceLabel=isCampaign?'Community campaign upload':item.author;
-            const sourceDetail=isCampaign?'Approved campaign media':`Source: ${item.source}`;
+            const href=isCampaign
+              ? `/campaign/${entry.item.id}`
+              : `/evidence/${entry.item.slug}`;
+            const title=entry.item.title;
+            const description=entry.item.description||'Approved campaign upload.';
+            const location=isCampaign
+              ? (entry.item.location||'Campaign')
+              : (entry.item.location||'Location unspecified');
+            const yearOrDate=isCampaign
+              ? (entry.item.event_date||'Recent')
+              : entry.item.year;
+            const verificationLabel=isCampaign
+              ? 'Campaign upload'
+              : entry.item.verification;
+            const sourceLabel=isCampaign
+              ? 'Community campaign upload'
+              : entry.item.author;
+            const sourceDetail=isCampaign
+              ? 'Approved campaign media'
+              : `Source: ${entry.item.source}`;
             return <Link key={`${entry.kind}-${item.id}`} href={href} className={`ev-panel ${isActive?'is-active':''}`} aria-label={`View ${isCampaign?'campaign upload':'evidence'}: ${title}`} style={{flexGrow:active===null?1:isActive?7:.55}} onMouseEnter={()=>setActive(index)} onFocus={()=>setActive(index)} tabIndex={0}>
               <div className="ev-panel-media">
                 {renderMedia(entry)}
@@ -113,10 +125,18 @@ export function EvidenceCarousel({items,campaignItems=[]}:{items:Evidence[];camp
       {visible.map(entry=>{
         const item=entry.item;
         const isCampaign=entry.kind==='campaign';
-        const href=isCampaign?`/campaign/${item.id}`:`/evidence/${item.slug}`;
-        const mobileYear=isCampaign?(item.event_date||'Recent'):item.year;
-        const mobileLocation=isCampaign?(item.location||'Campaign'):(item.location||'');
-        const mobileStatus=isCampaign?'Campaign':item.verification;
+        const href=isCampaign
+          ? `/campaign/${entry.item.id}`
+          : `/evidence/${entry.item.slug}`;
+        const mobileYear=isCampaign
+          ? (entry.item.event_date||'Recent')
+          : entry.item.year;
+        const mobileLocation=isCampaign
+          ? (entry.item.location||'Campaign')
+          : (entry.item.location||'');
+        const mobileStatus=isCampaign
+          ? 'Campaign'
+          : entry.item.verification;
         return <Link key={`${entry.kind}-${item.id}`} href={href} className="ev-mobile-card">
           <div className="relative aspect-[4/3] overflow-hidden bg-black">{renderMedia(entry,true)}<div className="absolute left-4 top-4 rounded-full bg-[var(--paper)]/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ink)]">{isCampaign?'Campaign':item.type}</div></div>
           <div className="p-5"><div className="mb-3 flex justify-between gap-3 text-[10px] uppercase tracking-widest text-[var(--muted)]"><span>{mobileYear} · {mobileLocation}</span><span>{mobileStatus}</span></div><h3 className="editorial-serif text-2xl leading-tight">{item.title}</h3><p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{item.description||'Approved campaign upload.'}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-bold">View {isCampaign?'campaign media':'evidence'} <ArrowUpRight size={14}/></span></div>
