@@ -59,13 +59,13 @@ export function AutoplayMedia({mediaUrl, thumbnail, alt, imgClassName}: {mediaUr
   }, [isTwitter, embed.embedUrl]);
 
   useEffect(() => {
-    if (!isTwitter || !inView || !embed.embedUrl) return;
+    if (!isTwitter || !embed.embedUrl) return;
     setTwitterFailed(false);
     setTwitterVideoSrc('/api/x-video/stream?url=' + encodeURIComponent(embed.embedUrl) + '&retry=' + twitterRetry);
   }, [isTwitter, inView, embed.embedUrl, twitterRetry]);
 
   useEffect(() => {
-    if (!isTwitter || !inView || !twitterFailed) return;
+    if (!isTwitter || !twitterFailed) return;
     if (retryCountRef.current >= 5) return;
     if (retryTimer.current) clearTimeout(retryTimer.current);
     const delay = Math.min(900 * 2 ** retryCountRef.current, 8000);
