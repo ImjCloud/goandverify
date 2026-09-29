@@ -414,9 +414,10 @@ export default function Admin() {
           <h1 className="editorial-serif mt-3 text-5xl md:text-7xl">Evidence review.</h1>
           <p className="mt-4 max-w-2xl text-[var(--muted)]">Review evidence submissions, then manage the campaign media that powers the public What's New section.</p>
         </div>
-        <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">
-          View public archive
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/evidence" className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Edit evidence</Link>
+          <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">View public archive</Link>
+        </div>
       </div>
 
       <div className="mt-10 grid gap-4 md:grid-cols-4">
