@@ -36,6 +36,8 @@ export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}
  if(patch.description===null)patch.description='';
  if(patch.type!==undefined&&!evidenceTypes.includes(String(patch.type)))return NextResponse.json({error:'Invalid evidence type.'},{status:400});
  if(patch.verification_status!==undefined)patch.verification_status=verificationMap[String(patch.verification_status)]||patch.verification_status;
+ if(patch.event_category!==undefined&&patch.event_category!==null&&!['campaign_activity','historical_event'].includes(String(patch.event_category)))return NextResponse.json({error:'Invalid event category.'},{status:400});
+ if(patch.about_person!==undefined&&patch.about_person!==null&&!['peter-obi','rabiu-kwankwaso','both'].includes(String(patch.about_person)))return NextResponse.json({error:'Invalid person value.'},{status:400});
  patch.updated_at=new Date().toISOString();
 
  const {data:updated,error}=await admin.from('evidence').update(patch).eq('id',id).select('*').single();
