@@ -2,13 +2,13 @@ import {safeFetch} from '@/lib/linkPreview';
 
 const INSTAGRAM_RESERVED = ['p','reel','reels','tv','stories','explore','accounts'];
 
-function normalizeInstagram(rawUrl:string): {url:URL; first:string|null} | null {
+function normalizeInstagram(rawUrl:string): {url:string; first:string|null} | null {
   try {
     const url=new URL(rawUrl);
     const host=url.hostname.replace(/^www\./,'').replace(/^m\./,'').toLowerCase();
     if(host!=='instagram.com') return null;
     const parts=url.pathname.split('/').filter(Boolean);
-    return {url, first:parts[0]||null};
+    return {url:url.toString(), first:parts[0]||null};
   } catch { return null; }
 }
 
@@ -53,7 +53,7 @@ export async function getInstagramThumbnail(rawUrl:string):Promise<string|null> 
   if(!parsed) return null;
 
   try {
-    const page=await fetchInstagramPage(parsed.url.toString());
+    const page=await fetchInstagramPage(parsed.url);
     if(page.image) return page.image;
     if(page.video) return page.video;
   } catch {}
