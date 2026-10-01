@@ -416,7 +416,7 @@ export default function Admin() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/admin/evidence" className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#15130f]">Edit evidence</Link>
-          <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">View public archive</Link><Link href="/admin/adverts" className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-[var(--accent)] px-5 py-3 text-sm font-black text-[#15130f]"><Pencil size={16}/> Edit / Update adverts</Link>
+          <Link href="/evidence" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold">View public archive</Link><Link href="/admin/adverts" className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-[var(--accent)] px-5 py-3 text-sm font-black text-[#15130f]"><Pencil size={16}/> Edit / Update adverts</Link><Link href="/admin/advertisers" className="action-animated inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/50 px-5 py-3 text-sm font-bold text-[var(--accent)]">Premium advertiser accounts</Link>
         </div>
       </div>
 
