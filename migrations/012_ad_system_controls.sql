@@ -8,4 +8,8 @@ insert into public.ad_system_settings (id, ads_enabled) values (true, true) on c
 alter table public.ad_system_settings enable row level security;
 revoke all on public.ad_system_settings from anon, authenticated;
 grant select on public.ad_system_settings to anon;
-create policy if not exists "public can read ad system state" on public.ad_system_settings for select to anon using (true);
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='ad_system_settings' and policyname='public can read ad system state') then
+    create policy "public can read ad system state" on public.ad_system_settings for select to anon using (true);
+  end if;
+end $$;
