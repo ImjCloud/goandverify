@@ -2,7 +2,7 @@ import {safeFetch} from '@/lib/linkPreview';
 
 const INSTAGRAM_RESERVED = ['p','reel','reels','tv','stories','explore','accounts'];
 
-function normalizeInstagram(rawUrl:string): {url:string; first:string|null} | null {
+function normalizeInstagram(rawUrl:string): {url:URL; first:string|null} | null {
   try {
     const url=new URL(rawUrl);
     const host=url.hostname.replace(/^www\./,'').replace(/^m\./,'').toLowerCase();
