@@ -1,12 +1,38 @@
 'use client';
 
-import {useEffect,useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {ArrowLeft,ArrowRight,ExternalLink,Pause,Play,Plus,Mail,MessageCircle} from 'lucide-react';
 import type {ApprovedAd} from '@/lib/ads';
 
+function shuffleWithAdvertiserGuard(items:ApprovedAd[]):ApprovedAd[]{
+ const remaining=[...items];
+ const out:ApprovedAd[]=[];
+ while(remaining.length){
+  const previous=out[out.length-1];
+  const candidates=previous
+   ? remaining.filter(ad=>(ad.advertiser_account_id||ad.advertiser_name)!==(previous.advertiser_account_id||previous.advertiser_name))
+   : remaining;
+  const pool=candidates.length?candidates:remaining;
+  const pick=Math.floor(Math.random()*pool.length);
+  const selected=pool[pick];
+  out.push(selected);
+  remaining.splice(remaining.indexOf(selected),1);
+ }
+ return out;
+}
+
 export function AdvertCarousel({ads}:{ads:ApprovedAd[]}){
- const visibleAds=ads.slice(0,30);const [index,setIndex]=useState(0);const [paused,setPaused]=useState(false);const current=visibleAds[index]??visibleAds[0];
+ const sourceAds=useMemo(()=>ads.slice(0,30),[ads]);
+ const [shuffledAds,setShuffledAds]=useState<ApprovedAd[]>(sourceAds);
+ const visibleAds=shuffledAds;
+ const [index,setIndex]=useState(0);const [paused,setPaused]=useState(false);const current=visibleAds[index]??visibleAds[0];
+ useEffect(()=>{
+  const premium=sourceAds.filter(ad=>ad.plan==='premium');
+  const free=sourceAds.filter(ad=>ad.plan!=='premium');
+  setShuffledAds([...shuffleWithAdvertiserGuard(premium),...shuffleWithAdvertiserGuard(free)]);
+  setIndex(0);
+ },[sourceAds]);
  useEffect(()=>{if(index>=visibleAds.length&&visibleAds.length)setIndex(0)},[index,visibleAds.length]);
  useEffect(()=>{if(paused||visibleAds.length<2)return;const timer=window.setInterval(()=>setIndex(v=>(v+1)%visibleAds.length),7000);return()=>window.clearInterval(timer)},[paused,visibleAds.length]);
  useEffect(()=>{if(!current)return;void fetch('/api/ads/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adId:current.id,eventType:'impression'})})},[current?.id]);
