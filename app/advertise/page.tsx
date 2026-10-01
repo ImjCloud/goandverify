@@ -1,37 +1,4 @@
 'use client';
-
-import {useState} from 'react';
-import {CheckCircle2, Loader2, Megaphone} from 'lucide-react';
-
-export default function AdvertisePage() {
-  const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    const form = new FormData(event.currentTarget);
-    form.set('rightsConfirmed', 'true');
-    if (!String(form.get('contactWhatsapp') ?? '').trim() && !String(form.get('contactEmail') ?? '').trim()) {
-      setError('Provide a WhatsApp number or a contact email so we can reach you about your advert.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const response = await fetch('/api/ads', {method: 'POST', body: form});
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Could not send your request.');
-      setSent(true);
-      event.currentTarget.reset();
-    } catch (requestError: any) {
-      setError(requestError.message || 'Could not send your request.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (sent) return <main className="mx-auto max-w-3xl px-5 py-28 text-center"><CheckCircle2 className="mx-auto text-[var(--accent)]" size={48}/><h1 className="editorial-serif mt-6 text-6xl">Request received.</h1><p className="mt-5 text-lg leading-8 text-[var(--muted)]">Your advert is now with the admin team. It will appear on the advert board only after approval.</p></main>;
-
-  return <main className="mx-auto max-w-4xl px-5 py-20"><div className="flex items-center gap-3 text-[var(--accent)]"><Megaphone size={20}/><p className="eyebrow text-[var(--accent)]">Advertise with us</p></div><h1 className="editorial-serif mt-3 text-6xl md:text-8xl">Put your work here.</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">Share a civic project, event, publication, service or community initiative. Every advert is reviewed before it appears publicly.</p>{error&&<p role="alert" className="mt-8 border border-red-900/50 bg-red-950/40 px-5 py-4 text-sm text-red-300">{error}</p>}<form onSubmit={submit} encType="multipart/form-data" className="mt-12 grid gap-5 border-t border-white/10 pt-8"><label className="grid gap-2 text-sm font-semibold">Advertiser or organisation<input name="advertiserName" required maxLength={120} className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label><div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 text-sm font-semibold">WhatsApp number<input name="contactWhatsapp" type="tel" placeholder="+234 801 234 5678" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label><label className="grid gap-2 text-sm font-semibold">Contact email <span className="font-normal text-[var(--muted)]">(optional)</span><input name="contactEmail" type="email" placeholder="hello@example.com" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label></div><p className="-mt-2 text-xs text-[var(--muted)]">Provide a WhatsApp number or an email so we can reach you about your advert.</p><label className="grid gap-2 text-sm font-semibold">Advert title<input name="title" required maxLength={120} className="border border-white/15 bg-[var(--surface)] px-4 py-3" placeholder="Community health event"/></label><label className="grid gap-2 text-sm font-semibold">Short description<textarea name="description" required maxLength={500} rows={4} placeholder="What should people know?" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label><label className="grid gap-2 text-sm font-semibold">Advert image or video <span className="font-normal text-[var(--muted)]">(optional)</span><input name="mediaFile" type="file" accept="image/*,video/*" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/><span className="text-xs font-normal text-[var(--muted)]">Or leave this blank and paste a link below — we'll pull a preview image from it automatically.</span></label><label className="grid gap-2 text-sm font-semibold">Destination link<input name="targetUrl" type="url" required placeholder="https://example.com/your-page" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/><span className="text-xs font-normal text-[var(--muted)]">Example: https://example.com/event or https://yourwebsite.com/offer — this is where people go when they click the advert.</span></label><div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 text-sm font-semibold">Start date <span className="font-normal text-[var(--muted)]">(optional)</span><input name="startDate" type="date" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label><label className="grid gap-2 text-sm font-semibold">End date <span className="font-normal text-[var(--muted)]">(optional)</span><input name="endDate" type="date" className="border border-white/15 bg-[var(--surface)] px-4 py-3"/></label></div><button disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-4 text-sm font-bold text-[#15130f] disabled:opacity-60">{busy&&<Loader2 size={16} className="animate-spin"/>}{busy?'Sending...':'Send advert for review'}</button></form></main>;
-}
+import Link from 'next/link';
+import {ArrowRight,Megaphone,ShieldCheck,Sparkles} from 'lucide-react';
+export default function AdvertisePage(){return <main className="mx-auto max-w-6xl px-5 py-20"><div className="flex items-center gap-3 text-[var(--accent)]"><Megaphone size={20}/><p className="eyebrow text-[var(--accent)]">Advertise with us</p></div><h1 className="editorial-serif mt-3 text-6xl md:text-8xl">Choose your advertising path.</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--muted)]">Choose a simple community listing or a premium advertiser account with your own management board and performance analytics.</p><div className="mt-12 grid gap-6 md:grid-cols-2"><Link href="/advertise/free" className="group border border-white/10 bg-[var(--surface)] p-8 transition hover:-translate-y-1 hover:border-[var(--accent)]"><div className="flex items-center justify-between"><span className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest">Free</span><Megaphone className="text-[var(--accent)]"/></div><h2 className="editorial-serif mt-8 text-4xl">Free Community Listing</h2><p className="mt-4 leading-7 text-[var(--muted)]">Use the existing advert submission process. Submit one advert for admin review without creating an advertiser account.</p><ul className="mt-6 grid gap-2 text-sm"><li>• Image or video</li><li>• Title and description</li><li>• Destination link</li><li>• Admin approval before publication</li></ul><span className="mt-8 inline-flex items-center gap-2 font-bold">Submit free advert <ArrowRight size={16}/></span></Link><Link href="/advertise/premium/signup" className="group border border-[var(--accent)]/50 bg-[var(--accent)]/10 p-8 transition hover:-translate-y-1 hover:border-[var(--accent)]"><div className="flex items-center justify-between"><span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-black uppercase tracking-widest text-[#15130f]">Premium</span><Sparkles className="text-[var(--accent)]"/></div><h2 className="editorial-serif mt-8 text-4xl">Premium Advertising</h2><p className="mt-4 leading-7 text-[var(--muted)]">Create an advertiser account, submit up to three premium posts, update your media and links, and see performance analytics after admin approval.</p><ul className="mt-6 grid gap-2 text-sm"><li>• Up to 3 active adverts</li><li>• Banner/image/video management</li><li>• Title, description and destination editing</li><li>• Impression, click and CTR analytics</li><li>• Premium adverts are placed before free adverts</li></ul><span className="mt-8 inline-flex items-center gap-2 font-bold">Create premium account <ShieldCheck size={16}/></span></Link></div></main>}
