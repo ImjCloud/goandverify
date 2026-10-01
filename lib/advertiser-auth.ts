@@ -12,5 +12,6 @@ export async function getAdvertiserContext(req: NextRequest) {
   const {data: account, error: accountError} = await admin.from('advertiser_accounts').select('*').eq('auth_user_id', userData.user.id).maybeSingle();
   if (accountError) return {user: userData.user, account: null, error: accountError.message};
   if (!account) return {user: userData.user, account: null, error: 'Advertiser account not found.'};
+  if (account.status === 'deleted') return {user: userData.user, account: null, error: 'This advertiser account has been deleted by an administrator.'};
   return {user: userData.user, account, error: null};
 }
