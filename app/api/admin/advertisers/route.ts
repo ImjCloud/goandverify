@@ -2,17 +2,33 @@ import {NextRequest,NextResponse} from 'next/server';
 import {isAdminRequest} from '@/lib/admin-auth';
 import {supabaseConfigured,supabaseAdmin} from '@/lib/supabase/server';
 import {logAudit} from '@/lib/auditLog';
+import {advertiserLoginUrl,advertiserWhatsAppUrl,sendAdvertiserApprovalEmail} from '@/lib/advertiserApprovalNotification';
 
 export async function GET(req:NextRequest){if(!isAdminRequest(req))return NextResponse.json({error:'Unauthorized'},{status:401});if(!supabaseConfigured)return NextResponse.json({error:'Supabase is not configured.'},{status:503});const admin=supabaseAdmin();const {data,error}=await admin.from('advertiser_accounts').select('*').order('created_at',{ascending:false});if(error)return NextResponse.json({error:error.message},{status:500});return NextResponse.json({accounts:data??[]});}
 
 export async function PATCH(req:NextRequest){
   if(!isAdminRequest(req))return NextResponse.json({error:'Unauthorized'},{status:401});if(!supabaseConfigured)return NextResponse.json({error:'Supabase is not configured.'},{status:503});const body=await req.json().catch(()=>({}));const id=String(body.id||'');const status=['approved','rejected','suspended'].includes(body.status)?body.status:'';if(!id||!status)return NextResponse.json({error:'Account and valid status are required.'},{status:400});const admin=supabaseAdmin();
   const {data,error}=await admin.from('advertiser_accounts').update({status,reviewer_notes:typeof body.notes==='string'?body.notes:null,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).select('*').single();if(error)return NextResponse.json({error:error.message},{status:500});
+  let notification:any=null;
   if(status==='approved'){
     const {error:adError}=await admin.from('ad_requests').update({status:'approved',updated_at:new Date().toISOString()}).eq('advertiser_account_id',id).eq('plan','premium');
     if(adError)return NextResponse.json({error:adError.message},{status:500});
+    const loginUrl=advertiserLoginUrl(req);
+    if(account.contact_whatsapp){
+      notification={method:'whatsapp',sent:false,url:advertiserWhatsAppUrl(account.contact_whatsapp,account.advertiser_name,account.email,loginUrl),reason:'WhatsApp requires the administrator to open the chat and send the pre-filled message.'};
+    }else{
+      const to=account.contact_email||account.email;
+      const result=await sendAdvertiserApprovalEmail(to,account.advertiser_name,account.email,loginUrl);
+      notification={method:'email',sent:result.sent,reason:result.reason};
+      if(!result.sent){
+        const subject=encodeURIComponent('Your GoAndVerify Premium Advertising account is approved');
+        const body=encodeURIComponent('Your GoAndVerify Premium Advertising account has been approved.\n\nLogin: '+loginUrl+'\nAccount email: '+account.email+'\n\nUse the password you created during signup. Do not share your password.');
+        notification={...notification,method:'manual',url:'mailto:'+encodeURIComponent(to)+'?subject='+subject+'&body='+body};
+      }
+    }
+    await logAudit('advertiser_access_notification','advertiser_account',id,{method:notification.method,sent:notification.sent});
   }
-  await logAudit(`advertiser_account_${status}`,'advertiser_account',id,{});return NextResponse.json({ok:true,account:data});
+  await logAudit(`advertiser_account_${status}`,'advertiser_account',id,{});return NextResponse.json({ok:true,account:data,notification});
 }
 
 export async function DELETE(req:NextRequest){
