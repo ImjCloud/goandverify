@@ -8,6 +8,8 @@ export async function GET(req:NextRequest){if(!isAdminRequest(req))return NextRe
 
 export async function PATCH(req:NextRequest){
   if(!isAdminRequest(req))return NextResponse.json({error:'Unauthorized'},{status:401});if(!supabaseConfigured)return NextResponse.json({error:'Supabase is not configured.'},{status:503});const body=await req.json().catch(()=>({}));const id=String(body.id||'');const status=['approved','rejected','suspended'].includes(body.status)?body.status:'';if(!id||!status)return NextResponse.json({error:'Account and valid status are required.'},{status:400});const admin=supabaseAdmin();
+  const {data:account,error:findError}=await admin.from('advertiser_accounts').select('*').eq('id',id).single();
+  if(findError||!account)return NextResponse.json({error:'Advertiser account not found.'},{status:404});
   const {data,error}=await admin.from('advertiser_accounts').update({status,reviewer_notes:typeof body.notes==='string'?body.notes:null,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).select('*').single();if(error)return NextResponse.json({error:error.message},{status:500});
   let notification:any=null;
   if(status==='approved'){
